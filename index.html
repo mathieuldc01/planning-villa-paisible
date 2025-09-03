@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -10,24 +9,14 @@
 
 
 <body>
+
   <header> 
     <nav>
-      <ul id="year-list">
-       
+      <ul id="year-list">       
       </ul>
     </nav>
   </header>
-  <script>
-  const debut = 2022;
-  const fin = new Date().getFullYear() + 1; // année actuelle + 1
-  const ul = document.getElementById('year-list');
 
-  for (let annee = debut; annee <= fin; annee++) {
-    const li = document.createElement('li');
-    li.innerHTML = `<a href="#" onclick="generatePlanning(${annee})">${annee}</a>`;
-    ul.appendChild(li);
-  }
-</script>
   <h1>Planning Interactif</h1>
   <div id="planning"></div>
   
@@ -82,7 +71,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
   <script>
 async function generateExcel() {
 
@@ -149,7 +138,7 @@ style(headerRow)
 
 
 
-const style=(row)=>{
+const stylePlanning=(row)=>{
   row.eachCell((cell) => {
   //cell.font = { bold: true }; // Texte en gras
 
@@ -174,30 +163,7 @@ const style=(row)=>{
 }
 </script>
 
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyAJSndMqGuEUJL5l8VjOA-TRY4BXphw6Fo",
-    authDomain: "planning-villa-paisible.firebaseapp.com",
-    projectId: "planning-villa-paisible",
-    storageBucket: "planning-villa-paisible.firebasestorage.app",
-    messagingSenderId: "331542979083",
-    appId: "1:331542979083:web:613e41b1224fa7b296dd0e",
-    measurementId: "G-DGVS4W490M"
-  };
-
-  // Initialize Firebase
-   firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-</script>
 
 
 </body>
@@ -209,189 +175,5 @@ const style=(row)=>{
 
 
 
-=======
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planning Villa Paisible</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
 
 
-<body>
-  <header> 
-    <nav>
-      <ul id="year-list">
-       
-      </ul>
-    </nav>
-  </header>
-  <script>
-  const debut = 2022;
-  const fin = new Date().getFullYear() + 1; // année actuelle + 1
-  const ul = document.getElementById('year-list');
-
-  for (let annee = debut; annee <= fin; annee++) {
-    const li = document.createElement('li');
-    li.innerHTML = `<a href="#" onclick="generatePlanning(${annee})">${annee}</a>`;
-    ul.appendChild(li);
-  }
-</script>
-  <h1>Planning Interactif</h1>
-  <div id="planning"></div>
-  
-        <form class="task-form hidden" id="task-form">
-        <div class="task-form-header">
-          <button id="close-task-form-btn" class="close-task-form-btn" type="button" aria-label="close">
-            <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#F44336" d="M21.5 4.5H26.501V43.5H21.5z" transform="rotate(45.001 24 24)" /><path fill="#F44336" d="M21.5 4.5H26.5V43.501H21.5z" transform="rotate(135.008 24 24)" /></svg>
-          </button>
-        </div>
-        <div class="task-form-body">
-          <label class="task-form-label" for="title-input">Nom</label>
-          <input required type="text" class="form-control" id="title-input" value="" />
-
-          <label class="task-form-label" for="date-input-start">Date d'arrivé</label>
-          <input type="date" class="form-control" id="date-input-start" value="" />
-
-          <label class="task-form-label" for="date-input-end">Date de dépard</label>
-          <input type="date" class="form-control" id="date-input-end" value="" />
-
-          <label class="task-form-label" for="app-input">Numéro Appartement</label>
-          <input required type="number" class="form-control" id="app-input" value="" />
-
-          <label class="task-form-label" for="adult-input">Nombre d'adulte</label>
-          <input required type="number" class="form-control" id="adult-input" value="" />
-
-          <label class="task-form-label" for="child-input">Nombre d'enfant</label>
-          <input required type="number" class="form-control" id="child-input" value="" />
-
-          <label class="task-form-label" for="loyer-input">Loyer</label>
-          <input required type="number" class="form-control" id="loyer-input" value="" />
-
-          <label for="taxe" class="task-form-label">Taxe de séjour (optionnel) :</label>
-          <select id="taxe">
-            <option value="option1">Option 1</option>
-            <option value="option2">Option 2</option>
-            <option value="option3">Option 3</option>
-          </select>
-
-          <label class="task-form-label">RBNB ? </label>
-            <label><input type="radio" name="choix" value="oui" class="form-control" id="oui" required> Oui</label>
-            <label><input type="radio" name="choix" value="non" class="form-control" id ="non"> Non</label>
-
-          <label class="task-form-label" for="description-input">Description</label>
-          <textarea class="form-control" id="description-input" cols="30" rows="5"></textarea>
-        </div>
-        <div class="task-form-footer">
-          <button id="add-or-update-task-btn" class="btn large-btn" type="submit">
-            Valider
-          </button>
-        </div>
-      </form>
-
-  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
-  <script src="script.js"></script>
-  <script>
-async function generateExcel() {
-
-let tax=0
-let taxRBNB=0
-let loyer=0
-let loyerRBNB=0
-const workbook = new ExcelJS.Workbook();
-const worksheet = workbook.addWorksheet('Feuille1');
-
-// Ajouter l'entête
-const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
-headerRow=worksheet.addRow(headers);
-style(headerRow)
-
-// Récupérer les contrats
-const ListContract = JSON.parse(localStorage.getItem(`contracts-${YEAR}`)) || [];
-
-// Ajouter les données
-ListContract.forEach(contract => {
-  const taxe = calcTax(contract);
-  const headerRow=worksheet.addRow([
-    contract.app,
-    contract.name,
-    `Du ${new Date(contract.start).toLocaleDateString("FR-fr")} au ${new Date(contract.end).toLocaleDateString("FR-fr")}`,
-    contract.RBNB ? "" : contract.loyer,
-    contract.NbAdulte,
-    contract.NbEnfant,
-    contract.RBNB ? "" : taxe,
-    contract.RBNB ? contract.loyer : "",
-    contract.RBNB ? taxe : "",
-    contract.description
-  ]);
-
-  style(headerRow)
-  loyer+=contract.RBNB? 0:Number(contract.loyer)
-  loyerRBNB+=contract.RBNB? Number(contract.loyer):0
-
-  tax+=contract.RBNB? 0:taxe
-  taxRBNB+=contract.RBNB? taxe:0
-});
-
-// Ajuster la largeur des colonnes automatiquement
-headers.forEach((_, colIndex) => {
-  let maxLength = 0;
-  worksheet.eachRow(row => {
-    const cell = row.getCell(colIndex + 1);
-    const cellValue = cell.value ? cell.value.toString() : '';
-    if (cellValue.length > maxLength) maxLength = cellValue.length;
-  });
-  worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
-});
-
-
-
-const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
-headerRow=worksheet.addRow(total);
-style(headerRow)
-
-  // Exporter le fichier
-  const buf = await workbook.xlsx.writeBuffer();
-  saveAs(new Blob([buf]), `Résumé-année-${YEAR}-au-${new Date().toLocaleDateString()}.xlsx`);
-}
-
-
-
-const style=(row)=>{
-  row.eachCell((cell) => {
-  //cell.font = { bold: true }; // Texte en gras
-
-  cell.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'DCE6F1' }, // Couleur de fond bleu clair
-  };
-
-  cell.border = {
-    top:    { style: 'thin', color: { argb: '000000' } },
-    left:   { style: 'thin', color: { argb: '000000' } },
-    bottom: { style: 'thin', color: { argb: '000000' } },
-    right:  { style: 'thin', color: { argb: '000000' } }
-  };
-
-  cell.alignment = {
-    vertical: 'middle',
-    horizontal: 'center',
-  };
-});
-}
-</script>
-  
-</body>
-
-</html>
-
-
-
-
-
-
->>>>>>> 8619a4bc8b3949ed3c81922e3ac1607501ce0aca
