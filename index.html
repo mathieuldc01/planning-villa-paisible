@@ -172,7 +172,33 @@ const style=(row)=>{
 });
 }
 </script>
-  
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAJSndMqGuEUJL5l8VjOA-TRY4BXphw6Fo",
+    authDomain: "planning-villa-paisible.firebaseapp.com",
+    projectId: "planning-villa-paisible",
+    storageBucket: "planning-villa-paisible.firebasestorage.app",
+    messagingSenderId: "331542979083",
+    appId: "1:331542979083:web:613e41b1224fa7b296dd0e",
+    measurementId: "G-DGVS4W490M"
+  };
+
+  // Initialize Firebase
+   firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
+
+
 </body>
 
 </html>
