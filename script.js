@@ -191,7 +191,7 @@ let selectedHld=false;
   const modifyContractBtn = document.getElementById("modify-contract-btn");
 
   const Excel=document.getElementById("btn-excel")
-  Excel.addEventListener("click",generateExcel)
+  Excel.addEventListener("click",generateExcel())
   document.getElementById("total-annee").setAttribute("Classic","0");
   document.getElementById("total-annee").setAttribute("RBNB","0");
   deleteContractBtn.addEventListener("click",async () => {
