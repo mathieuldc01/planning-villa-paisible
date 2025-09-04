@@ -4,6 +4,9 @@ const supabaseUrl = 'https://ikbmdtbyhxdlzoqkfmew.supabase.co'
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrYm1kdGJ5aHhkbHpvcWtmbWV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5NzE4MDksImV4cCI6MjA3MjU0NzgwOX0.DHcPtjFe7C2bCrFS9ruplwW1aZfEkSOrYjnUIHMdSA4"
 const _supabase = createClient(supabaseUrl, supabaseKey)
 
+
+
+
 async function insertData(table, data) {
   const payload = { ...data };
   const { error } = await _supabase
@@ -114,6 +117,71 @@ async function main() {
 
 main();
 */
+
+
+async function generateExcel() {
+
+let tax=0
+let taxRBNB=0
+let loyer=0
+let loyerRBNB=0
+const workbook = new ExcelJS.Workbook();
+const worksheet = workbook.addWorksheet('Feuille1');
+
+// Ajouter l'entête
+const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
+const headerRow=worksheet.addRow(headers);
+style(headerRow)
+
+// Récupérer les contrats
+const ListContract = await loadData("contrats",YEAR)
+
+// Ajouter les données
+ListContract.forEach(contract => {
+  const taxe = calcTax(contract);
+  const headerRow=worksheet.addRow([
+    contract.app,
+    contract.name,
+    `Du ${new Date(contract.start).toLocaleDateString("FR-fr")} au ${new Date(contract.end).toLocaleDateString("FR-fr")}`,
+    contract.RBNB ? "" : contract.loyer,
+    contract.NbAdulte,
+    contract.NbEnfant,
+    contract.RBNB ? "" : taxe,
+    contract.RBNB ? contract.loyer : "",
+    contract.RBNB ? taxe : "",
+    contract.description
+  ]);
+
+  style(headerRow)
+  loyer+=contract.RBNB? 0:Number(contract.loyer)
+  loyerRBNB+=contract.RBNB? Number(contract.loyer):0
+
+  tax+=contract.RBNB? 0:taxe
+  taxRBNB+=contract.RBNB? taxe:0
+});
+
+// Ajuster la largeur des colonnes automatiquement
+headers.forEach((_, colIndex) => {
+  let maxLength = 0;
+  worksheet.eachRow(row => {
+    const cell = row.getCell(colIndex + 1);
+    const cellValue = cell.value ? cell.value.toString() : '';
+    if (cellValue.length > maxLength) maxLength = cellValue.length;
+  });
+  worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
+});
+
+
+
+const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
+const headerRowTotal=worksheet.addRow(total);
+style(headerRowTotal)
+
+  // Exporter le fichier
+  const buf = await workbook.xlsx.writeBuffer();
+  saveAs(new Blob([buf]), `Résumé-année-${YEAR}-au-${new Date().toLocaleDateString()}.xlsx`);
+}
+
 
 
 
@@ -1114,71 +1182,6 @@ for (let annee = debutPlanning; annee <= finPlanning; annee++) {
   li.appendChild(a);
   ulPlanning.appendChild(li);
 }
-
-
-async function generateExcel() {
-
-let tax=0
-let taxRBNB=0
-let loyer=0
-let loyerRBNB=0
-const workbook = new ExcelJS.Workbook();
-const worksheet = workbook.addWorksheet('Feuille1');
-
-// Ajouter l'entête
-const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
-const headerRow=worksheet.addRow(headers);
-style(headerRow)
-
-// Récupérer les contrats
-const ListContract = await loadData("contrats",YEAR)
-
-// Ajouter les données
-ListContract.forEach(contract => {
-  const taxe = calcTax(contract);
-  const headerRow=worksheet.addRow([
-    contract.app,
-    contract.name,
-    `Du ${new Date(contract.start).toLocaleDateString("FR-fr")} au ${new Date(contract.end).toLocaleDateString("FR-fr")}`,
-    contract.RBNB ? "" : contract.loyer,
-    contract.NbAdulte,
-    contract.NbEnfant,
-    contract.RBNB ? "" : taxe,
-    contract.RBNB ? contract.loyer : "",
-    contract.RBNB ? taxe : "",
-    contract.description
-  ]);
-
-  style(headerRow)
-  loyer+=contract.RBNB? 0:Number(contract.loyer)
-  loyerRBNB+=contract.RBNB? Number(contract.loyer):0
-
-  tax+=contract.RBNB? 0:taxe
-  taxRBNB+=contract.RBNB? taxe:0
-});
-
-// Ajuster la largeur des colonnes automatiquement
-headers.forEach((_, colIndex) => {
-  let maxLength = 0;
-  worksheet.eachRow(row => {
-    const cell = row.getCell(colIndex + 1);
-    const cellValue = cell.value ? cell.value.toString() : '';
-    if (cellValue.length > maxLength) maxLength = cellValue.length;
-  });
-  worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
-});
-
-
-
-const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
-const headerRowTotal=worksheet.addRow(total);
-style(headerRowTotal)
-
-  // Exporter le fichier
-  const buf = await workbook.xlsx.writeBuffer();
-  saveAs(new Blob([buf]), `Résumé-année-${YEAR}-au-${new Date().toLocaleDateString()}.xlsx`);
-}
-
 
 
 const style=(row)=>{
