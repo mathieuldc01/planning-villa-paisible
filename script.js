@@ -17,6 +17,36 @@ async function insertData(table, data) {
   return true;
 }
 
+
+const  validContract= async (end)=>{
+    let isValid=true
+    const listContract= await loadData("contrats",YEAR);
+    
+      const app = selectingContract.app;
+      const name = selectingContract.id;
+      let day = new Date(selectingContract.start);
+      day.setDate(day.getDate() + 1);
+
+      while (day < end) {
+        const dayStr = day.toLocaleDateString('fr-FR');
+        const id = `${dayStr}--app${app}`;
+        const cell = document.getElementById(id);
+        if (cell) {
+          listContract.forEach((contrat)=>{
+              
+            if (dayStr===new Date(contrat.start).toLocaleDateString('fr-FR')&& app===contrat.app){
+              
+              isValid=false
+            }
+          })
+        }
+            day.setDate(day.getDate() + 1);
+
+        
+      }
+      return isValid
+}
+
 // loadData(table: string, year: number)
 async function loadData(table, year) {
   const { data, error } = await _supabase
@@ -355,6 +385,7 @@ let selectedHld=false;
           td.isPlanning=true;
 
           td.addEventListener("click",async () => {
+
             const clickedDate = new Date(year+Math.floor(m/12), month, dayObj.day);
             if (selectingContract.activate) {
               if (!selectingContract.start) {
@@ -366,7 +397,8 @@ let selectedHld=false;
                   result.innerText = `Début : ${selectingContract.start.toLocaleDateString()} / AP.${ap}`;
                 }
               } else if (!selectingContract.end) {
-                if (clickedDate >= selectingContract.start && ap === selectingContract.app) {
+                    const test= await validContract(clickedDate)
+                if (clickedDate >= selectingContract.start && ap === selectingContract.app && test) {
                   if (td.names.length >= 1 && !td.isStart) {
                     result.innerText = `Fin impossible, déjà réservé : ${td.names}`;
                   } else {
@@ -379,7 +411,8 @@ let selectedHld=false;
                     addButton.innerText = "Valider";
                   }
                 } else {
-                  alert(`Date de fin invalide (même appart (${selectingContract.app}) et après le début)`);
+                  if (!test){result.innerText="Période contrat non disponible"}else{
+                  alert(`Date de fin invalide (même appart (${selectingContract.app}) et après le début)`);}
                 }
               }
             } else if (td.names.length > 0) {
@@ -622,11 +655,11 @@ const updateDisplay = async () => {
 
   
 const listContract = await loadData("contrats", YEAR)
-console.log("ici",listContract);
 const listDayOff = await loadData("jours_feries", YEAR)
 resetAllTh();
 resetTotal();
 resetAllTd();
+
     listContract.forEach((contract) => {
       const color = contract.RBNB ? "yellow" : "yellow"; // même couleur ?
       const app = contract.app;
@@ -647,27 +680,31 @@ resetAllTd();
             cell.names.push(name);
           }
 
-          const isStart = day.toLocaleDateString() === new Date(contract.start).toLocaleDateString();
-          const isEnd = day.toLocaleDateString() === new Date(contract.end).toLocaleDateString();
+          cell.isStart =cell.isStart || day.toLocaleDateString() === new Date(contract.start).toLocaleDateString();
+          cell.isEnd =cell.isEnd  || day.toLocaleDateString() === new Date(contract.end).toLocaleDateString();
+          
 
-          if (isStart && isEnd) {
+          if (cell.isStart && cell.isEnd) {
             cell.innerText = "D/A";
-          } else if (isStart) {
+          } else if (cell.isStart) {
             cell.innerText = "A";
-          } else if (isEnd) {
+          } else if (cell.isEnd) {
             cell.innerText = "D";
           }
         }
 
         day.setDate(day.getDate() + 1);
       }
+    })
 
+  listContract.forEach((contract)=>{
       // Affichage associé au contrat
       const texte = `${contract.name} ${contract.RBNB ? '(RBNB)' : ''} : ${contract.description}`;
       creerZoneTexteEtendue(contract, texte);
       plotIncome(contract);
       updateTotal(contract);
-})
+  })
+
 
   listDayOff.forEach((dayId) => {
     const cell = document.getElementById(dayId.id);
@@ -684,8 +721,8 @@ resetAllTd();
 };
 
 const resetTotal = () => {
-  document.getElementById("total-annee").setAttribute("Classic","0")
-  document.getElementById("total-annee").setAttribute("RBNB","0")
+  document.getElementById("total-annee").setAttribute("Classic","0");
+  document.getElementById("total-annee").setAttribute("RBNB","0");
   const totals = document.getElementsByClassName("total");
   Array.from(totals).forEach(total => {
     total.innerText = "0";
@@ -875,7 +912,7 @@ const getBestTextArea=(contract)=>{
   if (getWeekNumber(new Date(contract.start))===getWeekNumber(new Date(contract.end)))
   {
     if (new Date(contract.start).getMonth()===new Date(contract.end).getMonth()){
-     length=new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay()-new Date(contract.start).getDay()
+     length=(new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay())-new Date(contract.start).getDay()+1
      start=contract.start
      startOffset=true;
      endOffset=true;
@@ -898,7 +935,7 @@ const getBestTextArea=(contract)=>{
   }else if (getWeekNumber(new Date(contract.start))+1===getWeekNumber(new Date(contract.end))){
       if ( (new Date(contract.start).getMonth()===new Date(contract.end).getMonth())){
         //  même mois | cons week
-        if (new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay()>8-(new Date(contract.start).getDay()===0?7:new Date(contract.start).getDay()))
+        if ((new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay())>8-(new Date(contract.start).getDay()===0?7:new Date(contract.start).getDay()))
         {
            length=new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay()
            const year=new Date(contract.end).getFullYear()
@@ -1077,3 +1114,95 @@ for (let annee = debutPlanning; annee <= finPlanning; annee++) {
   li.appendChild(a);
   ulPlanning.appendChild(li);
 }
+
+
+async function generateExcel() {
+
+let tax=0
+let taxRBNB=0
+let loyer=0
+let loyerRBNB=0
+const workbook = new ExcelJS.Workbook();
+const worksheet = workbook.addWorksheet('Feuille1');
+
+// Ajouter l'entête
+const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
+const headerRow=worksheet.addRow(headers);
+style(headerRow)
+
+// Récupérer les contrats
+const ListContract = await loadData("contrats",YEAR)
+
+// Ajouter les données
+ListContract.forEach(contract => {
+  const taxe = calcTax(contract);
+  const headerRow=worksheet.addRow([
+    contract.app,
+    contract.name,
+    `Du ${new Date(contract.start).toLocaleDateString("FR-fr")} au ${new Date(contract.end).toLocaleDateString("FR-fr")}`,
+    contract.RBNB ? "" : contract.loyer,
+    contract.NbAdulte,
+    contract.NbEnfant,
+    contract.RBNB ? "" : taxe,
+    contract.RBNB ? contract.loyer : "",
+    contract.RBNB ? taxe : "",
+    contract.description
+  ]);
+
+  style(headerRow)
+  loyer+=contract.RBNB? 0:Number(contract.loyer)
+  loyerRBNB+=contract.RBNB? Number(contract.loyer):0
+
+  tax+=contract.RBNB? 0:taxe
+  taxRBNB+=contract.RBNB? taxe:0
+});
+
+// Ajuster la largeur des colonnes automatiquement
+headers.forEach((_, colIndex) => {
+  let maxLength = 0;
+  worksheet.eachRow(row => {
+    const cell = row.getCell(colIndex + 1);
+    const cellValue = cell.value ? cell.value.toString() : '';
+    if (cellValue.length > maxLength) maxLength = cellValue.length;
+  });
+  worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
+});
+
+
+
+const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
+const headerRowTotal=worksheet.addRow(total);
+style(headerRowTotal)
+
+  // Exporter le fichier
+  const buf = await workbook.xlsx.writeBuffer();
+  saveAs(new Blob([buf]), `Résumé-année-${YEAR}-au-${new Date().toLocaleDateString()}.xlsx`);
+}
+
+
+
+const style=(row)=>{
+  row.eachCell((cell) => {
+  //cell.font = { bold: true }; // Texte en gras
+
+  cell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'DCE6F1' }, // Couleur de fond bleu clair
+  };
+
+  cell.border = {
+    top:    { style: 'thin', color: { argb: '000000' } },
+    left:   { style: 'thin', color: { argb: '000000' } },
+    bottom: { style: 'thin', color: { argb: '000000' } },
+    right:  { style: 'thin', color: { argb: '000000' } }
+  };
+
+  cell.alignment = {
+    vertical: 'middle',
+    horizontal: 'center',
+  };
+});
+}
+
+

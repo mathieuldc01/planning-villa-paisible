@@ -48,12 +48,13 @@
           <label class="task-form-label" for="loyer-input">Loyer</label>
           <input required type="number" class="form-control" id="loyer-input" value="" />
 
+          <div class="hidden">
           <label for="taxe" class="task-form-label">Taxe de séjour (optionnel) :</label>
           <select id="taxe">
             <option value="option1">Option 1</option>
             <option value="option2">Option 2</option>
             <option value="option3">Option 3</option>
-          </select>
+          </select></div>
 
           <label class="task-form-label">RBNB ? </label>
             <label><input type="radio" name="choix" value="oui" class="form-control" id="oui" required> Oui</label>
@@ -72,96 +73,7 @@
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
   <script type="module" src="script.js"></script>
-  <script>
-async function generateExcel() {
 
-let tax=0
-let taxRBNB=0
-let loyer=0
-let loyerRBNB=0
-const workbook = new ExcelJS.Workbook();
-const worksheet = workbook.addWorksheet('Feuille1');
-
-// Ajouter l'entête
-const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
-headerRow=worksheet.addRow(headers);
-style(headerRow)
-
-// Récupérer les contrats
-const ListContract = JSON.parse(localStorage.getItem(`contracts-${YEAR}`)) || [];
-
-// Ajouter les données
-ListContract.forEach(contract => {
-  const taxe = calcTax(contract);
-  const headerRow=worksheet.addRow([
-    contract.app,
-    contract.name,
-    `Du ${new Date(contract.start).toLocaleDateString("FR-fr")} au ${new Date(contract.end).toLocaleDateString("FR-fr")}`,
-    contract.RBNB ? "" : contract.loyer,
-    contract.NbAdulte,
-    contract.NbEnfant,
-    contract.RBNB ? "" : taxe,
-    contract.RBNB ? contract.loyer : "",
-    contract.RBNB ? taxe : "",
-    contract.description
-  ]);
-
-  style(headerRow)
-  loyer+=contract.RBNB? 0:Number(contract.loyer)
-  loyerRBNB+=contract.RBNB? Number(contract.loyer):0
-
-  tax+=contract.RBNB? 0:taxe
-  taxRBNB+=contract.RBNB? taxe:0
-});
-
-// Ajuster la largeur des colonnes automatiquement
-headers.forEach((_, colIndex) => {
-  let maxLength = 0;
-  worksheet.eachRow(row => {
-    const cell = row.getCell(colIndex + 1);
-    const cellValue = cell.value ? cell.value.toString() : '';
-    if (cellValue.length > maxLength) maxLength = cellValue.length;
-  });
-  worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
-});
-
-
-
-const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
-headerRow=worksheet.addRow(total);
-style(headerRow)
-
-  // Exporter le fichier
-  const buf = await workbook.xlsx.writeBuffer();
-  saveAs(new Blob([buf]), `Résumé-année-${YEAR}-au-${new Date().toLocaleDateString()}.xlsx`);
-}
-
-
-
-const stylePlanning=(row)=>{
-  row.eachCell((cell) => {
-  //cell.font = { bold: true }; // Texte en gras
-
-  cell.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'DCE6F1' }, // Couleur de fond bleu clair
-  };
-
-  cell.border = {
-    top:    { style: 'thin', color: { argb: '000000' } },
-    left:   { style: 'thin', color: { argb: '000000' } },
-    bottom: { style: 'thin', color: { argb: '000000' } },
-    right:  { style: 'thin', color: { argb: '000000' } }
-  };
-
-  cell.alignment = {
-    vertical: 'middle',
-    horizontal: 'center',
-  };
-});
-}
-</script>
 
 
 
