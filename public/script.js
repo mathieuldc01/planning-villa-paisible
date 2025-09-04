@@ -1,43 +1,96 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import {getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js"; 
+import { createClient } from  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+
+const supabaseUrl = 'https://ikbmdtbyhxdlzoqkfmew.supabase.co'
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrYm1kdGJ5aHhkbHpvcWtmbWV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5NzE4MDksImV4cCI6MjA3MjU0NzgwOX0.DHcPtjFe7C2bCrFS9ruplwW1aZfEkSOrYjnUIHMdSA4"
+const _supabase = createClient(supabaseUrl, supabaseKey)
+
+async function insertData(table, data) {
+  const payload = { ...data };
+  const { error } = await _supabase
+    .from(table)
+    .upsert(payload, { onConflict: 'id' }); // upsert pour insérer ou mettre à jour si id existe
+
+  if (error) {
+    console.error(`Erreur lors de l'insertion dans ${table} :`, error);
+    return false;
+  }
+  return true;
+}
+
+// loadData(table: string, year: number)
+async function loadData(table, year) {
+  const { data, error } = await _supabase
+    .from(table)
+    .select()
+    .eq('year', year);  // filtre sur la colonne 'year' = valeur year passée en paramètre
+
+  if (error) {
+    console.error(`Erreur lors du chargement des données depuis ${table} :`, error);
+    return [];
+  }
+  return data;  // retourne un tableau
+}
 
 
-// Configuration Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAJSndMqGuEUJL5l8VjOA-TRY4BXphw6Fo",
-  authDomain: "planning-villa-paisible.firebaseapp.com",
-  projectId: "planning-villa-paisible",
-  storageBucket: "planning-villa-paisible.firebasestorage.app",
-  messagingSenderId: "331542979083",
-  appId: "1:331542979083:web:613e41b1224fa7b296dd0e",
-  measurementId: "G-DGVS4W490M"
-};
-// Initialisation de Firebase
-const appl = initializeApp(firebaseConfig);
-const db = getFirestore(appl);
+// deleteData(table: string, id: string)
+async function deleteData(table, id) {
+  const { error } = await _supabase
+    .from(table)
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error(`Erreur lors de la suppression dans ${table} :`, error);
+    return false;
+  }
+  return true;
+}
 
 
-const testDocRef = doc(db, "testCollection", "testDoc");
 
 
-console.log("ici4")
-getDoc(testDocRef)
-  .then(docSnap => {
-    if (docSnap.exists()) {
-      console.log("Doc data:", docSnap.data());
-    } else {
-      console.log("No such document!");
-    }
-  })
-  .catch(error => {
-    console.error("Erreur Firestore:", error);
-  });
-  console.log("ici5")
+/* Fonction principale pour tester
+async function main() {
+  const table = 'contrats';
+  const testId = 'contrat-test-2025';
+
+  const testData = {
+    id:"test2",
+    activate: true,
+    name: 'Test User',
+    start: '2025-05-01',
+    end: '2025-09-01',
+    app: 1,
+    loyer: 1200,
+    taxeDeSejour: 30,
+    NbAdulte: 2,
+    NbEnfant: 1,
+    description: 'Contrat test pour 2025',
+    RBNB: false,
+  };
+
+  console.log('Insertion du contrat...');
+  const insertOk = await insertData(table, testData);
+  console.log('Insertion réussie ?', insertOk);
+
+  console.log('Chargement des contrats pour 2025...');
+  const contrats2025 = await loadData(table, 2025);
+  console.log('Contrats récupérés :', contrats2025);
+
+
+
+  console.log('Fin des tests');
+}
+
+main();
+*/
+
+
+
 
 
 const selectingContract = {
-  i:null,
+  id:null,
   activate : false,
   name : null,
   start  : null,
@@ -48,7 +101,8 @@ const selectingContract = {
   NbAdulte : null,
   NbEnfant : null,
   description : null,
-  RBNB : null
+  RBNB : null,
+  year : 0,
 };
 
 let app
@@ -82,9 +136,12 @@ taskForm.addEventListener("submit", (e) => {
 });
 let YEAR = 2025;
 let selectedHld=false;
-function generatePlanning(year) {
+
+ function generatePlanning(year) {
   YEAR = year;
+  selectingContract.year=YEAR
   const planningContainer = document.getElementById("planning");
+  
   planningContainer.innerHTML = `
     <h2>Planning ${year}</h2>
     <div class="add-contract-div">
@@ -107,8 +164,8 @@ function generatePlanning(year) {
   Excel.addEventListener("click",generateExcel)
   document.getElementById("total-annee").setAttribute("Classic","0");
   document.getElementById("total-annee").setAttribute("RBNB","0");
-  deleteContractBtn.addEventListener("click", () => {
-    deleteContract();
+  deleteContractBtn.addEventListener("click",async () => {
+    await deleteContract();
     updateDisplay();
   });
 
@@ -237,53 +294,26 @@ function generatePlanning(year) {
     const numbersRow = document.createElement("tr");
     numbersRow.appendChild(document.createElement("th"));
     Object.keys(weeks).forEach(week => {
-            const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
-
+      const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
       weeks[week].forEach(dayObj => {
-        const th = document.createElement("th");
-
-        th.textContent = dayObj.day;
-        th.isDayOff = false;
-        th.id = `${dayObj.day}-${week}-${year+Math.floor(m/12)}`;
-        th.addEventListener("click", () => {
-
-          if (selectedHld) {
-  const docRef = doc(db, "jours_feries", `DayOff-${YEAR}`);
-
-  getDoc(docRef)
-    .then((docSnap) => {
-      let listDayOff = [];
-
-      if (docSnap.exists()) {
-        listDayOff = docSnap.data().listDayOff || [];
-        console.log("Jours fériés récupérés :", listDayOff);
-      } else {
-        console.log("Aucun jour férié trouvé pour cette année");
-      }
-
-      if (listDayOff.includes(th.id)) {
-        listDayOff = listDayOff.filter(day => day !== th.id);
-      } else {
-        listDayOff.push(th.id);
-      }
-
-      setDoc(docRef, { listDayOff })
-        .then(() => {
-          console.log(`Liste des jours fériés ${YEAR} sauvegardée`);
-          updateDisplay();
-        })
-        .catch((error) => {
-          console.error("Erreur sauvegarde :", error);
-        });
-    })
-    .catch((error) => {
-      console.error("Erreur lors de la récupération :", error);
-    });
-}
-
-
-        });
-        numbersRow.appendChild(th);
+          const th = document.createElement("th");
+          th.textContent = dayObj.day;
+          th.isDayOff = false;
+          th.id = `${dayObj.day}-${week}-${year+Math.floor(m/12)}`;
+          th.addEventListener("click",async () => {
+                if (selectedHld) {
+                    const listDayOff=await loadData("jours_feries", YEAR)
+                    if (listDayOff.some(obj => obj.id === th.id)) {
+                      deleteData("jours_feries", th.id)
+                      
+                    } else {
+                      
+                      await insertData('jours_feries', {id:th.id,year:YEAR});
+                    }
+                    updateDisplay()
+                    }
+          });
+      numbersRow.appendChild(th);
       });
       
       if (isFull){
@@ -324,7 +354,7 @@ function generatePlanning(year) {
           td.style.background = "white";
           td.isPlanning=true;
 
-          td.addEventListener("click", () => {
+          td.addEventListener("click",async () => {
             const clickedDate = new Date(year+Math.floor(m/12), month, dayObj.day);
             if (selectingContract.activate) {
               if (!selectingContract.start) {
@@ -354,13 +384,8 @@ function generatePlanning(year) {
               }
             } else if (td.names.length > 0) {
               
-              const docRef = doc(db, "Contrats", `contracts-${YEAR}`);
-
-              getDoc(docRef)
-                .then((docSnap) => {
-                  if (docSnap.exists()) {
-                    const saveContract = docSnap.data().listContract;
-                    console.log("Contrats récupérés :", saveContract);
+              const saveContract=await loadData("contrats", YEAR)
+              
 
                     updateSelectingContract(saveContract.find(contract => contract.id === td.names[0]));
                     deleteContractBtn.classList.remove("hidden");
@@ -371,18 +396,12 @@ function generatePlanning(year) {
                     result.innerText += `Loyer : ${selectingContract.loyer} | Taxe de séjour ${selectingContract.taxeDeSejour}\n`;
                     result.innerText += `Date : du ${selectingContract.start} au ${selectingContract.end}\n`;
                     result.innerText += `Remarque : ${selectingContract.description}`;
-                  } else {
-                    console.log("Aucun contrat trouvé pour cette année");
-                  }
-                })
-                .catch((error) => {
-                  console.error("Erreur lors de la récupération :", error);
-                });
+                
 
 
             }
+        
           });
-
           tr.appendChild(td);
         });
         
@@ -526,7 +545,7 @@ startDateInput.value = formatDateToInput(selectingContract.start);
 endDateInput.value = formatDateToInput(selectingContract.end);
 
 
-const addContract=()=>{
+const addContract= async ()=>{
 
 
   selectingContract.app=appInput.value;
@@ -541,12 +560,11 @@ const addContract=()=>{
   selectingContract.RBNB = RBNBInput.checked,
   selectingContract.app=appInput.value;
   selectingContract.taxeDeSejour = calcTax(selectingContract)
-  console.log(calcTax(selectingContract),selectingContract.app)
   result.innerText=`${addButton.innerText==="Modifier"? "Contrat modifier : " : "Ajout d'un contrat : "} ${selectingContract.name}`
 
   
 
-  saveContractForYear(YEAR, selectingContract);
+  await insertData('contrats', selectingContract);
   
   closeForm();
 
@@ -570,41 +588,6 @@ const updateSelectingContract = (contract)=>{
   selectingContract.RBNB = contract.RBNB;
 };
 
-function saveContractForYear(year, newContract) {
-  // 1. Charger les contrats existants
-  
-const docRef = doc(db, "Contrats", `contracts-${year}`);
-
-getDoc(docRef)
-  .then((docSnap) => {
-    if (docSnap.exists()) {
-      const contracts = docSnap.data().listContract || [];
-      console.log("Contrats récupérés :", contracts);
-
-      // Ajouter le nouveau contrat
-      contracts.push(newContract);
-
-      // Réécrire dans Firestore
-      return setDoc(docRef, { listContract: contracts });
-    } else {
-      console.log("Aucun contrat trouvé pour cette année, création du premier.");
-      
-      // Si aucun document n'existe, on en crée un avec le nouveau contrat
-      return setDoc(docRef, { listContract: [newContract] });
-    }
-  })
-  .then(() => {
-    console.log(`Liste des contrats ${year} sauvegardée`);
-  })
-  .catch((error) => {
-    console.error("Erreur lors de la récupération ou de la sauvegarde :", error);
-  });
-
-
-}
-
-
-
 
 
 const closeForm=()=>{
@@ -620,12 +603,12 @@ const closeForm=()=>{
 const plotIncome=(contract)=>{
     const color=contract.RBNB? "yellow" : "orange"
     const year = new Date(contract.start).getFullYear()
-  cell=document.getElementById(`week-${getWeekNumber(new Date(contract.start))}app-${contract.app}-color${color}-${year}`)
+  const cell=document.getElementById(`week-${getWeekNumber(new Date(contract.start))}app-${contract.app}-color${color}-${year}`)
   if (cell){
   cell.innerText=contract.loyer;}
 }
 
-const updateDisplay = () => {
+const updateDisplay = async () => {
     const week=getWeekNumber(new Date())
     const day=new Date().getDate()
     const year=new Date().getFullYear()
@@ -635,91 +618,64 @@ const updateDisplay = () => {
         document.getElementById(`${day}-${week}-${year}`).style.border="3px solid red"
   
     }
-    resetAllTh();
-    resetTotal();
+;
 
-console.log("ici3",db)  
-const contractsRef = doc(db, "Contrats", `contracts-${YEAR}`);
-const holidaysRef = doc(db, "jours_feries", `DayOff-${YEAR}`);
-console.log(contractsRef)
-// --- 1. Charger les contrats ---
-getDoc(contractsRef)
-  .then((docSnap) => {
-    if (docSnap.exists()) {
-      const listContract = docSnap.data().listContract || [];
-      console.log("Contrats récupérés :", listContract);
+  
+const listContract = await loadData("contrats", YEAR)
+console.log("ici",listContract);
+const listDayOff = await loadData("jours_feries", YEAR)
+resetAllTh();
+resetTotal();
+resetAllTd();
+    listContract.forEach((contract) => {
+      const color = contract.RBNB ? "yellow" : "yellow"; // même couleur ?
+      const app = contract.app;
+      const name = contract.id;
 
-      listContract.forEach((contract) => {
-        const color = contract.RBNB ? "yellow" : "yellow"; // même couleur ?
-        const app = contract.app;
-        const name = contract.id;
+      let day = new Date(contract.start);
+      const end = new Date(contract.end);
 
-        let day = new Date(contract.start);
-        const end = new Date(contract.end);
+      while (day <= end) {
+        const dayStr = day.toLocaleDateString('fr-FR');
+        const id = `${dayStr}--app${app}`;
+        const cell = document.getElementById(id);
 
-        while (day <= end) {
-          const dayStr = day.toLocaleDateString('fr-FR');
-          const id = `${dayStr}--app${app}`;
-          const cell = document.getElementById(id);
-
-          if (cell) {
-            cell.style.background = color;
-            if (!cell.names) cell.names = [];
-            if (!cell.names.includes(name)) {
-              cell.names.push(name);
-            }
-
-            const isStart = day.toLocaleDateString() === new Date(contract.start).toLocaleDateString();
-            const isEnd = day.toLocaleDateString() === new Date(contract.end).toLocaleDateString();
-
-            if (isStart && isEnd) {
-              cell.innerText = "D/A";
-            } else if (isStart) {
-              cell.innerText = "A";
-            } else if (isEnd) {
-              cell.innerText = "D";
-            }
+        if (cell) {
+          cell.style.background = color;
+          if (!cell.names) cell.names = [];
+          if (!cell.names.includes(name)) {
+            cell.names.push(name);
           }
 
-          day.setDate(day.getDate() + 1);
+          const isStart = day.toLocaleDateString() === new Date(contract.start).toLocaleDateString();
+          const isEnd = day.toLocaleDateString() === new Date(contract.end).toLocaleDateString();
+
+          if (isStart && isEnd) {
+            cell.innerText = "D/A";
+          } else if (isStart) {
+            cell.innerText = "A";
+          } else if (isEnd) {
+            cell.innerText = "D";
+          }
         }
 
-        // Affichage associé au contrat
-        const texte = `${contract.name} ${contract.RBNB ? '(RBNB)' : ''} : ${contract.description}`;
-        creerZoneTexteEtendue(contract, texte);
-        plotIncome(contract);
-        updateTotal(contract);
-      });
-    } else {
-      console.log("Aucun contrat trouvé pour cette année");
+        day.setDate(day.getDate() + 1);
+      }
+
+      // Affichage associé au contrat
+      const texte = `${contract.name} ${contract.RBNB ? '(RBNB)' : ''} : ${contract.description}`;
+      creerZoneTexteEtendue(contract, texte);
+      plotIncome(contract);
+      updateTotal(contract);
+})
+
+  listDayOff.forEach((dayId) => {
+    const cell = document.getElementById(dayId.id);
+    if (cell) {
+      cell.style.backgroundColor = "blue";
     }
-  })
-  .catch((error) => {
-    console.error("Erreur lors de la récupération des contrats :", error);
   });
-
-
-// --- 2. Charger les jours fériés ---
-getDoc(holidaysRef)
-  .then((docSnap) => {
-    if (docSnap.exists()) {
-      const listDayOff = docSnap.data().listDayOff || [];
-      console.log("Jours fériés récupérés :", listDayOff);
-
-      listDayOff.forEach((dayId) => {
-        const cell = document.getElementById(dayId);
-        if (cell) {
-          cell.style.backgroundColor = "blue";
-        }
-      });
-    } else {
-      console.log("Aucun jour férié trouvé pour cette année");
-    }
-  })
-  .catch((error) => {
-    console.error("Erreur lors de la récupération des jours fériés :", error);
-  });
-
+    
 
 
 
@@ -750,11 +706,11 @@ const resetTotal = () => {
 };
 
 const updateTotal=(contract)=>{
-  week=getWeekNumber(new Date(contract.start))
-  month=new Date(contract.start).getMonth()
-  year=new Date(contract.start).getFullYear()
+  const week=getWeekNumber(new Date(contract.start))
+  const month=new Date(contract.start).getMonth()
+  const year=new Date(contract.start).getFullYear()
   
-  color=contract.RBNB? "yellow":"orange"
+  const color=contract.RBNB? "yellow":"orange"
   let classic=Number(document.getElementById("total-annee").getAttribute("Classic"))
   let RBNB=Number(document.getElementById("total-annee").getAttribute("RBNB"))
 
@@ -780,54 +736,31 @@ const updateTotal=(contract)=>{
 }
 
 
-const deleteContract = ()=>{
-      resetAllTd();
-
-
-const docRef = doc(db, "Contrats", `contracts-${YEAR}`);
-
-getDoc(docRef)
-  .then((docSnap) => {
-    if (docSnap.exists()) {
-      const contrats = docSnap.data().listContract;
-      console.log("Contrats récupérés :", contrats);
-
-      const contratsRestants = contrats.filter(
-        (contract) => contract.id !== selectingContract.id
-      );
-
-      // Mettre à jour le localStorage
-      localStorage.setItem(`contracts-${YEAR}`, JSON.stringify(contratsRestants));
-
-      // Réécrire dans Firestore
-      setDoc(docRef, {
-        listContract: contratsRestants,
-      })
-        .then(() => {
-          console.log(`Liste des contrats ${YEAR} sauvegardée`);
-        })
-        .catch((error) => {
-          console.error("Erreur de sauvegarde :", error);
-        });
-
+const deleteContract = async ()=>{
+      
+      await deleteData("contrats", selectingContract.id)
+      
       document.getElementById("delete-contract-btn").classList.toggle("hidden");
       document.getElementById("modify-contract-btn").classList.toggle("hidden");
 
+      
+      newContract = false;
       result.innerText = `Contrat ${selectingContract.name} supprimé`;
+      resetAllTd();
       reset();
       resetTotal();
-      newContract = false;
-      updateDisplay();
-    } else {
-      console.log("Aucun contrat trouvé pour cette année");
-    }
-  })
-  .catch((error) => {
-    console.error("Erreur lors de la récupération :", error);
-  });
 
-      
 }
+
+
+
+
+
+
+
+
+
+
 
 const modifyContract=()=>{
       nameInput.value=selectingContract.name;
@@ -882,7 +815,7 @@ function creerZoneTexteEtendue(contract,texte) {
 
   // Récupération de l'élément cible
 
-e1 = document.getElementById(`${new Date(start).toLocaleDateString()}--app${contract.app}`);
+const e1 = document.getElementById(`${new Date(start).toLocaleDateString()}--app${contract.app}`);
 // Positionner e1 en relatif pour pouvoir placer une zone absolue à l'intérieur
 if (getComputedStyle(e1).position === 'static') {
   e1.style.position = 'relative';
@@ -1119,9 +1052,8 @@ const calcTax=(contract)=>{
   const nbNuit=new Date(contract.end).getDate()-new Date(contract.start).getDate()
   const nbApp=contract.app
   const nbAdult=contract.NbAdulte
-  console.log(nbNuit,nbAdult,nbApp)
   if (nbApp==1){
-    return "a définir" //icisa
+    return -1
   }else {
     return 0.75*nbAdult*nbNuit
   }

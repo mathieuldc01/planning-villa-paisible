@@ -1,89 +1,179 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planning Villa Paisible</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.2.1/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.2.1/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.2.1/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
-    </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+<body>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+  <header> 
+    <nav>
+      <ul id="year-list">       
+      </ul>
+    </nav>
+  </header>
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
-        }
-      });
-    </script>
-  </body>
+  <h1>Planning Interactif</h1>
+  <div id="planning"></div>
+  
+        <form class="task-form hidden" id="task-form">
+        <div class="task-form-header">
+          <button id="close-task-form-btn" class="close-task-form-btn" type="button" aria-label="close">
+            <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#F44336" d="M21.5 4.5H26.501V43.5H21.5z" transform="rotate(45.001 24 24)" /><path fill="#F44336" d="M21.5 4.5H26.5V43.501H21.5z" transform="rotate(135.008 24 24)" /></svg>
+          </button>
+        </div>
+        <div class="task-form-body">
+          <label class="task-form-label" for="title-input">Nom</label>
+          <input required type="text" class="form-control" id="title-input" value="" />
+
+          <label class="task-form-label" for="date-input-start">Date d'arrivé</label>
+          <input type="date" class="form-control" id="date-input-start" value="" />
+
+          <label class="task-form-label" for="date-input-end">Date de dépard</label>
+          <input type="date" class="form-control" id="date-input-end" value="" />
+
+          <label class="task-form-label" for="app-input">Numéro Appartement</label>
+          <input required type="number" class="form-control" id="app-input" value="" />
+
+          <label class="task-form-label" for="adult-input">Nombre d'adulte</label>
+          <input required type="number" class="form-control" id="adult-input" value="" />
+
+          <label class="task-form-label" for="child-input">Nombre d'enfant</label>
+          <input required type="number" class="form-control" id="child-input" value="" />
+
+          <label class="task-form-label" for="loyer-input">Loyer</label>
+          <input required type="number" class="form-control" id="loyer-input" value="" />
+
+          <label for="taxe" class="task-form-label">Taxe de séjour (optionnel) :</label>
+          <select id="taxe">
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <option value="option3">Option 3</option>
+          </select>
+
+          <label class="task-form-label">RBNB ? </label>
+            <label><input type="radio" name="choix" value="oui" class="form-control" id="oui" required> Oui</label>
+            <label><input type="radio" name="choix" value="non" class="form-control" id ="non"> Non</label>
+
+          <label class="task-form-label" for="description-input">Description</label>
+          <textarea class="form-control" id="description-input" cols="30" rows="5"></textarea>
+        </div>
+        <div class="task-form-footer">
+          <button id="add-or-update-task-btn" class="btn large-btn" type="submit">
+            Valider
+          </button>
+        </div>
+      </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+  <script type="module" src="script.js"></script>
+  <script>
+async function generateExcel() {
+
+let tax=0
+let taxRBNB=0
+let loyer=0
+let loyerRBNB=0
+const workbook = new ExcelJS.Workbook();
+const worksheet = workbook.addWorksheet('Feuille1');
+
+// Ajouter l'entête
+const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
+headerRow=worksheet.addRow(headers);
+style(headerRow)
+
+// Récupérer les contrats
+const ListContract = JSON.parse(localStorage.getItem(`contracts-${YEAR}`)) || [];
+
+// Ajouter les données
+ListContract.forEach(contract => {
+  const taxe = calcTax(contract);
+  const headerRow=worksheet.addRow([
+    contract.app,
+    contract.name,
+    `Du ${new Date(contract.start).toLocaleDateString("FR-fr")} au ${new Date(contract.end).toLocaleDateString("FR-fr")}`,
+    contract.RBNB ? "" : contract.loyer,
+    contract.NbAdulte,
+    contract.NbEnfant,
+    contract.RBNB ? "" : taxe,
+    contract.RBNB ? contract.loyer : "",
+    contract.RBNB ? taxe : "",
+    contract.description
+  ]);
+
+  style(headerRow)
+  loyer+=contract.RBNB? 0:Number(contract.loyer)
+  loyerRBNB+=contract.RBNB? Number(contract.loyer):0
+
+  tax+=contract.RBNB? 0:taxe
+  taxRBNB+=contract.RBNB? taxe:0
+});
+
+// Ajuster la largeur des colonnes automatiquement
+headers.forEach((_, colIndex) => {
+  let maxLength = 0;
+  worksheet.eachRow(row => {
+    const cell = row.getCell(colIndex + 1);
+    const cellValue = cell.value ? cell.value.toString() : '';
+    if (cellValue.length > maxLength) maxLength = cellValue.length;
+  });
+  worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
+});
+
+
+
+const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
+headerRow=worksheet.addRow(total);
+style(headerRow)
+
+  // Exporter le fichier
+  const buf = await workbook.xlsx.writeBuffer();
+  saveAs(new Blob([buf]), `Résumé-année-${YEAR}-au-${new Date().toLocaleDateString()}.xlsx`);
+}
+
+
+
+const stylePlanning=(row)=>{
+  row.eachCell((cell) => {
+  //cell.font = { bold: true }; // Texte en gras
+
+  cell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'DCE6F1' }, // Couleur de fond bleu clair
+  };
+
+  cell.border = {
+    top:    { style: 'thin', color: { argb: '000000' } },
+    left:   { style: 'thin', color: { argb: '000000' } },
+    bottom: { style: 'thin', color: { argb: '000000' } },
+    right:  { style: 'thin', color: { argb: '000000' } }
+  };
+
+  cell.alignment = {
+    vertical: 'middle',
+    horizontal: 'center',
+  };
+});
+}
+</script>
+
+
+
+
+</body>
+
 </html>
+
+
+
+
+
+
+
+
