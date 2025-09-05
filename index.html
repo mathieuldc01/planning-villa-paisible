@@ -5,6 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planning Villa Paisible</title>
   <link rel="stylesheet" href="style.css" />
+<script>
+  // SHA-256 hash du mot de passe "villa2024"
+  const PASSWORD_HASH = "f1c209e951d4bd466f9da8be1779301861ab8ed17c4e0380b5155a6e77440206";
+
+  // Masque tout le document au chargement
+  document.documentElement.style.display = "none";
+
+  // Convertir string en ArrayBuffer
+  async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  async function checkAccess() {
+    const input = prompt("Mot de passe requis :");
+
+    
+
+    const hash = await hashPassword(input);
+    console.log(hash,PASSWORD_HASH)
+    while (hash !== PASSWORD_HASH) {
+      const input = prompt(`Mauvais mot de passe :` );
+      const hash = await hashPassword(input);
+          console.log(hash,PASSWORD_HASH)
+
+    }
+    document.documentElement.style.display = "";
+    
+  }
+
+  // Vérifie dès le chargement
+  checkAccess();
+</script>
+
 </head>
 
 

@@ -402,13 +402,16 @@ let selectedHld=false;
                 if (selectedHld) {
                     const listDayOff=await loadData("jours_feries", YEAR)
                     if (listDayOff.some(obj => obj.id === th.id)) {
+                      th.style.backgroundColor="white"
+                      console.log("blanc")
                       deleteData("jours_feries", th.id)
                       
                     } else {
-                      
+                      th.style.backgroundColor="blue"
+                      console.log("blue")
                       await insertData('jours_feries', {id:th.id,year:YEAR});
                     }
-                    updateDisplay()
+                   
                     }
           });
       numbersRow.appendChild(th);
@@ -718,15 +721,12 @@ const updateDisplay = async () => {
       
         document.getElementById(`${day}-${week}-${year}`).style.border="3px solid red"
   
-    }
-;
-
-  
-const listContract = await loadData("contrats", YEAR)
-const listDayOff = await loadData("jours_feries", YEAR)
-resetAllTh();
-resetTotal();
-resetAllTd();
+    };
+      const listContract = await loadData("contrats", YEAR)
+      const listDayOff = await loadData("jours_feries", YEAR)
+      resetAllTh();
+      resetTotal();
+      resetAllTd();
 
     listContract.forEach((contract) => {
       const color = contract.RBNB ? "yellow" : "yellow"; // même couleur ?
@@ -851,9 +851,7 @@ const deleteContract = async ()=>{
       
       newContract = false;
       result.innerText = `Contrat ${selectingContract.name} supprimé`;
-      resetAllTd();
-      reset();
-      resetTotal();
+
 
 }
 
@@ -867,7 +865,7 @@ const deleteContract = async ()=>{
 
 
 
-const modifyContract=()=>{
+const modifyContract=async()=>{
       nameInput.value=selectingContract.name;
       appInput.value=selectingContract.app;
       startDateInput.value =selectingContract.start;
@@ -878,7 +876,7 @@ const modifyContract=()=>{
       descriptionInput.value =selectingContract.description;
       RBNBInput.checked =selectingContract.RBNB;
       RBNBInputNo.checked =!selectingContract.RBNB;
-      deleteContract();
+      await deleteContract();
       taskForm.classList.toggle("hidden")
       addButton.innerText="Modifier"
       
