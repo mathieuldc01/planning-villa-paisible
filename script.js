@@ -11,12 +11,25 @@ async function insertData(table, data) {
   const payload = { ...data };
   const { error } = await _supabase
     .from(table)
-    .upsert(payload, { onConflict: 'id' }); // upsert pour insérer ou mettre à jour si id existe
-
+    .upsert(payload, { onConflict: 'id' }); 
   if (error) {
     console.error(`Erreur lors de l'insertion dans ${table} :`, error);
     return false;
   }
+  if (new Date(payload.start).getFullYear()!==new Date(payload.end).getFullYear()){
+    data.year=new Date(data.end).getFullYear()
+    data.id= `${data.name}-${new Date()}`
+    const payload = { ...data };
+    const { error } = await _supabase
+    .from(table)
+    .upsert(payload, { onConflict: 'id' }); // upsert pour insérer ou mettre à jour si id existe
+    console.log("ok2")
+    if (error) {
+    console.error(`Erreur lors de l'insertion dans ${table} :`, error);
+    return false;
+  }
+  }
+  
   return true;
 }
 
@@ -129,7 +142,7 @@ const workbook = new ExcelJS.Workbook();
 const worksheet = workbook.addWorksheet('Feuille1');
 
 // Ajouter l'entête
-const headers = ['APP','NomS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
+const headers = ['APP','NOMS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
 const headerRow=worksheet.addRow(headers);
 style(headerRow)
 
@@ -310,6 +323,33 @@ let selectedHld=false;
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
   ];
 
+  const VacPrice=['1 : 350€ | 2&3 : 500€ | 4 : 470€ | 5 : 800€',
+    '1 : 350€ | 2&3 : 500€ | 4 : 470€ | 5 : 800€',
+    '1 : 350€ | 2&3 : 500€ | 4 : 470€ | 5 : 800€',
+  '',
+'',
+'',
+'1 : 350€ | 2&3 : 500€ | 4 : 450€ | 5 : 700€',
+'1 : 350€ | 2&3 : 500€ | 4 : 450€ | 5 : 700€',
+'',
+'',
+'',
+'1 : 350€ | 2&3 : 500€ | 4 : 450€ | 5 : 700€']
+
+  const CurePrice=['',
+    '',
+    '',
+    '1 : 550€ | 2&3 : 620€ | 4 : 600€ | 5 : 700€',
+    '1 : 550€ | 2&3 : 650€ | 4 : 600€ | 5 : 800€',
+    '1 : 550€ | 2&3 : 650€ | 4 : 600€ | 5 : 800€',
+    '1 : 550€ | 2&3 : 650€ | 4 : 600€ | 5 : 800€',
+    '1 : 550€ | 2&3 : 650€ | 4 : 600€ | 5 : 800€',
+    '1 : 550€ | 2&3 : 650€ | 4 : 600€ | 5 : 800€',
+    '1 : 500€ | 2&3 : 620€ | 4 : 580€ | 5 : 700€',
+    '1 : 500€ | 2&3 : 620€ | 4 : 580€ | 5 : 700€',
+    '',
+  ]
+
   const dayNames = ["D", "L", "M", "M", "J", "V", "S"];
   
 
@@ -319,6 +359,34 @@ let selectedHld=false;
     const monthDiv = document.createElement("div");
     monthDiv.classList.add("month");
 
+    const titleContainerInfo = document.createElement("div");
+    titleContainerInfo.style.display = "flex";
+    titleContainerInfo.style.alignItems = "center";
+    
+    if (VacPrice[month]!==""){
+    const titleInfoVac = document.createElement("h2");
+    titleInfoVac.classList.add("month-table");
+    titleInfoVac.textContent = 'Vacances : '+VacPrice[month];
+    titleInfoVac.style.color='blue'
+    titleContainerInfo.appendChild(titleInfoVac);
+    }
+
+    if (CurePrice[month]!=="" && VacPrice[month]!==""){
+    const titleInfoSpace = document.createElement("h2");
+    titleInfoSpace.classList.add("month-table");
+    titleInfoSpace.textContent = ` / `
+    titleContainerInfo.appendChild(titleInfoSpace);
+    }
+
+    if (CurePrice[month]!==""){
+    const titleInfoCure = document.createElement("h2");
+    titleInfoCure.classList.add("month-table");
+    titleInfoCure.textContent ='Cure : '+CurePrice[month];
+    titleInfoCure.style.color='red'
+    titleContainerInfo.appendChild(titleInfoCure);
+    
+    }
+    monthDiv.appendChild(titleContainerInfo);
     const titleContainer = document.createElement("div");
     titleContainer.style.display = "flex";
     titleContainer.style.alignItems = "center";
@@ -458,6 +526,7 @@ let selectedHld=false;
           td.addEventListener("click",async () => {
 
             const clickedDate = new Date(year+Math.floor(m/12), month, dayObj.day);
+            console.log(clickedDate,selectingContract.activate,selectingContract.start,selectingContract.end)
             if (selectingContract.activate) {
               if (!selectingContract.start) {
                 if (td.names.length >= 1 && !td.isEnd) {
@@ -770,7 +839,7 @@ const updateDisplay = async () => {
       const texte = `${contract.name} ${contract.RBNB ? '(RBNB)' : ''} : ${contract.description}`;
       creerZoneTexteEtendue(contract, texte);
       plotIncome(contract);
-      updateTotal(contract);
+      updateTotal(contract,1);
   })
 
 
@@ -781,7 +850,7 @@ const updateDisplay = async () => {
     }
   });
     
-
+reset()
 
 
 
@@ -810,7 +879,8 @@ const resetTotal = () => {
   });
 };
 
-const updateTotal=(contract)=>{
+const updateTotal=(contract,action)=>{
+  
   const week=getWeekNumber(new Date(contract.start))
   const month=new Date(contract.start).getMonth()
   const year=new Date(contract.start).getFullYear()
@@ -830,11 +900,12 @@ const updateTotal=(contract)=>{
   const totalMonth=document.getElementById(monthId)
   
   const totalMonthNb=Number(totalMonth.value)
-  totalMonth.value=totalMonthNb+Number(contract.loyer)
+  totalMonth.value=totalMonthNb+action*Number(contract.loyer)
   totalMonth.innerText=contract.RBNB? `RBNB : ${totalMonth.value}`:`Normal : ${totalMonth.value}`
+  
 
-  if (contract.RBNB){RBNB+=Number(contract.loyer)}
-  else {classic+=Number(contract.loyer)}
+  if (contract.RBNB){RBNB+=action*Number(contract.loyer)}
+  else {classic+=action*Number(contract.loyer)}
   document.getElementById("total-annee").innerText=`Montant Total : ${classic+RBNB} (Classique : ${classic} |RBNB : ${RBNB})`
   document.getElementById("total-annee").setAttribute("Classic",classic)
   document.getElementById("total-annee").setAttribute("RBNB",RBNB)
@@ -842,7 +913,7 @@ const updateTotal=(contract)=>{
 
 
 const deleteContract = async ()=>{
-      
+      updateTotal(selectingContract,-1)
       await deleteData("contrats", selectingContract.id)
       
       document.getElementById("delete-contract-btn").classList.toggle("hidden");
@@ -851,7 +922,7 @@ const deleteContract = async ()=>{
       
       newContract = false;
       result.innerText = `Contrat ${selectingContract.name} supprimé`;
-
+      
 
 }
 
@@ -1152,13 +1223,17 @@ function joursRestantsDansMois(date) {
 
 
 const calcTax=(contract)=>{
-  const nbNuit=new Date(contract.end).getDate()-new Date(contract.start).getDate()
+  const nbNuit=Number(new Date(contract.end).getDate()-new Date(contract.start).getDate())
   const nbApp=contract.app
-  const nbAdult=contract.NbAdulte
+  const nbAdult=Number(contract.NbAdulte)
   if (nbApp==1){
-    return -1
+    console.log(contract.loyer, contract.loyer / (nbAdult + Number(contract.NbEnfant)) / nbNuit)
+    return parseFloat((Math.min(
+    1.35,
+    contract.loyer / (nbAdult + Number(contract.NbEnfant)) / nbNuit * 0.05
+    )*nbAdult * nbNuit).toFixed(2))
   }else {
-    return 0.75*nbAdult*nbNuit
+    return 0.85*nbAdult*nbNuit
   }
   
 }
