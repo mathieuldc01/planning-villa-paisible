@@ -340,7 +340,7 @@ let startVac;
 
   buttonHldVac.addEventListener("click", () => {
     if (selectedHldVac) {
-      buttonHld.innerTextVac = "Mettre à jour Vacances";
+      buttonHldVac.innerText = "Mettre à jour Vacances";
       result.innerText = "";
       selectedHldVac = false;
     } else {
@@ -546,7 +546,8 @@ let startVac;
                     }else{
                       newVac=false
                       const endVac=th.id 
-                      result.innerText="Sélectionner le début des Vacances"                     
+                      result.innerText="Sélectionner le début des Vacances"   
+                                        
                       while (startVac!==endVac){
                         console.log(startVac)
                         const startDate = new Date(startVac);
