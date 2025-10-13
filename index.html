@@ -23,15 +23,15 @@
   }
 
   async function checkAccess() {
-    const input = prompt("Mot de passe requis :");
+    let input = prompt("Mot de passe requis :");
 
     
 
-    const hash = await hashPassword(input);
+    let hash = await hashPassword(input);
     console.log(hash,PASSWORD_HASH)
     while (hash !== PASSWORD_HASH) {
-      const input = prompt(`Mauvais mot de passe :` );
-      const hash = await hashPassword(input);
+      input = prompt(`Mauvais mot de passe :` );
+      hash = await hashPassword(input);
           console.log(hash,PASSWORD_HASH)
 
     }
