@@ -18,12 +18,11 @@ async function insertData(table, data) {
   }
   if (new Date(payload.start).getFullYear()!==new Date(payload.end).getFullYear()){
     data.year=new Date(data.end).getFullYear()
-    data.id= `${data.name}-${new Date()}`
+    data.id= `${data.name}-${new Date()}-bis`
     const payload = { ...data };
     const { error } = await _supabase
     .from(table)
     .upsert(payload, { onConflict: 'id' }); // upsert pour insérer ou mettre à jour si id existe
-    console.log("ok2")
     if (error) {
     console.error(`Erreur lors de l'insertion dans ${table} :`, error);
     return false;
@@ -80,6 +79,7 @@ async function loadData(table, year) {
 
 // deleteData(table: string, id: string)
 async function deleteData(table, id) {
+  console.log(id)
   const { error } = await _supabase
     .from(table)
     .delete()
@@ -142,7 +142,7 @@ const workbook = new ExcelJS.Workbook();
 const worksheet = workbook.addWorksheet('Feuille1');
 
 // Ajouter l'entête
-const headers = ['APP','NOMS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'TAXE DE SEJOUR RBNR', 'REMARQUES'];
+const headers = ['APP','NOMS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'REMARQUES'];
 const headerRow=worksheet.addRow(headers);
 style(headerRow)
 
@@ -170,7 +170,6 @@ ListContract.forEach(contract => {
   loyerRBNB+=contract.RBNB? Number(contract.loyer):0
 
   tax+=contract.RBNB? 0:taxe
-  taxRBNB+=contract.RBNB? taxe:0
 });
 
 // Ajuster la largeur des colonnes automatiquement
@@ -186,7 +185,7 @@ headers.forEach((_, colIndex) => {
 
 
 
-const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, taxRBNB, ''];
+const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, ''];
 const headerRowTotal=worksheet.addRow(total);
 style(headerRowTotal)
 
@@ -404,8 +403,8 @@ let selectedHld=false;
       const date = new Date(year+Math.floor(m/12), month, day);
       let week = getWeekNumber(date);
       
-      if (week > 6 && month === 0) week = 0;
-      if (week < 6 && month === 11) week = 60;
+      if (week > 6 && month === 0) week = -week;
+      if (week < 6 && month === 11) week = 100+week;
       if (!weeks[week]) weeks[week] = [];
       weeks[week].push({ date, day });
     }
@@ -417,12 +416,15 @@ let selectedHld=false;
     // Ligne des numéros de semaine
     const weekRow = document.createElement("tr");
     weekRow.appendChild(document.createElement("th"));
-    Object.keys(weeks).forEach(week => {
-      const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
+    Object.keys(weeks)
+    .map(Number) // transforme les clés en nombres
+    .sort((a, b) => a - b) // tri numérique croissant
+    .forEach(week => {
+      const isFull = weeks[week][weeks[week].length - 1].date.getDay() === 0;
       const th = document.createElement("th");
-      th.colSpan = weeks[week].length ; // +2 pour colonnes jaune et orange
-      if (isFull){th.colSpan+=2}
-      th.textContent = `Semaine ${week > 0 && week < 60 ? week :getWeekNumber(new Date(year, 0, 1))}`;
+      th.colSpan = weeks[week].length;
+      if (isFull) th.colSpan += 2;
+      th.textContent = `Semaine ${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}`;
       weekRow.appendChild(th);
     });
     const totalMonthHead=createColorColumn("white")
@@ -433,7 +435,10 @@ let selectedHld=false;
     // Ligne des noms de jours
     const daysRow = document.createElement("tr");
     daysRow.appendChild(document.createElement("th"));
-    Object.keys(weeks).forEach(week => {
+    Object.keys(weeks)
+    .map(Number) // transforme les clés en nombres
+    .sort((a, b) => a - b) // tri numérique croissant
+    .forEach(week => {
       const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
       weeks[week].forEach(dayObj => {
         const th = document.createElement("th");
@@ -459,24 +464,25 @@ let selectedHld=false;
     // Ligne des numéros de jour
     const numbersRow = document.createElement("tr");
     numbersRow.appendChild(document.createElement("th"));
-    Object.keys(weeks).forEach(week => {
+    Object.keys(weeks)
+    .map(Number) // transforme les clés en nombres
+    .sort((a, b) => a - b) // tri numérique croissant
+    .forEach(week => {
       const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
       weeks[week].forEach(dayObj => {
           const th = document.createElement("th");
           th.textContent = dayObj.day;
           th.isDayOff = false;
-          th.id = `${dayObj.day}-${week}-${year+Math.floor(m/12)}`;
+          th.id = `${dayObj.day}-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`;
           th.addEventListener("click",async () => {
                 if (selectedHld) {
                     const listDayOff=await loadData("jours_feries", YEAR)
                     if (listDayOff.some(obj => obj.id === th.id)) {
                       th.style.backgroundColor="white"
-                      console.log("blanc")
                       deleteData("jours_feries", th.id)
                       
                     } else {
                       th.style.backgroundColor="blue"
-                      console.log("blue")
                       await insertData('jours_feries', {id:th.id,year:YEAR});
                     }
                    
@@ -509,7 +515,10 @@ let selectedHld=false;
       label.textContent = `AP.${ap}`;
       tr.appendChild(label);
       
-      Object.keys(weeks).forEach(week => {
+      Object.keys(weeks)
+      .map(Number) // transforme les clés en nombres
+      .sort((a, b) => a - b) // tri numérique croissant
+      .forEach(week => {
         const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
 
         weeks[week].forEach(dayObj => {
@@ -526,7 +535,6 @@ let selectedHld=false;
           td.addEventListener("click",async () => {
 
             const clickedDate = new Date(year+Math.floor(m/12), month, dayObj.day);
-            console.log(clickedDate,selectingContract.activate,selectingContract.start,selectingContract.end)
             if (selectingContract.activate) {
               if (!selectingContract.start) {
                 if (td.names.length >= 1 && !td.isEnd) {
@@ -560,7 +568,7 @@ let selectedHld=false;
               const saveContract=await loadData("contrats", YEAR)
               
 
-                    updateSelectingContract(saveContract.find(contract => contract.id === td.names[0]));
+                    updateSelectingContract(saveContract.find(contract => contract.id === td.names[0] || contract.id === td.names[0]+'-bis' ));
                     deleteContractBtn.classList.remove("hidden");
                     modifyContractBtn.classList.remove("hidden");
 
@@ -579,11 +587,11 @@ let selectedHld=false;
         });
         
         if (isFull){
-        const totalWeekApp=createColorColumn("yellow",week,ap,year+Math.floor(m/12))
+        const totalWeekApp=createColorColumn("yellow",Math.abs(week) > 100 ? week - 100 : Math.abs(week),ap,year+Math.floor(m/12))
         totalWeekApp.classList.add("total")
         tr.appendChild(totalWeekApp)
         
-        const totalWeekAppRBNB=createColorColumn("orange",week,ap,year+Math.floor(m/12))
+        const totalWeekAppRBNB=createColorColumn("orange",Math.abs(week) > 100 ? week - 100 : Math.abs(week),ap,year+Math.floor(m/12))
         totalWeekAppRBNB.classList.add("total")
         tr.appendChild(totalWeekAppRBNB);
         }
@@ -598,7 +606,12 @@ let selectedHld=false;
       label.textContent = `Total`;
       tr.appendChild(label);
       label.style.border="none"
-      Object.keys(weeks).forEach(week => {
+      
+      Object.keys(weeks)
+      .map(Number) // transforme les clés en nombres
+      .sort((a, b) => a - b) // tri numérique croissant
+      .forEach(week => {
+        
         const isFull=weeks[week][weeks[week].length-1].date.getDay()===0;
         weeks[week].forEach(dayObj => {
           const td = document.createElement("td");
@@ -610,11 +623,12 @@ let selectedHld=false;
         
         const totalYellow=createColorColumn("yellow")
         totalYellow.innerText=0
-        totalYellow.id=`total-yellow-${week}-${year+Math.floor(m/12)}`
+        totalYellow.id=`total-yellow-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`
+        console.log(`total-yellow-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`)
         totalYellow.classList.add("total")
         const totalOrange=createColorColumn("orange")
         totalOrange.innerText=0
-        totalOrange.id=`total-orange-${week}-${year+Math.floor(m/12)}`
+        totalOrange.id=`total-orange-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`
         totalOrange.classList.add("total")
         tr.appendChild(totalYellow);
         tr.appendChild(totalOrange);
@@ -881,17 +895,25 @@ const resetTotal = () => {
 
 const updateTotal=(contract,action)=>{
   
-  const week=getWeekNumber(new Date(contract.start))
-  const month=new Date(contract.start).getMonth()
-  const year=new Date(contract.start).getFullYear()
+  // Crée le 1er janvier de la même année
+const startDate = new Date(contract.start)
+
+const janFirst = new Date(YEAR, 0, 1);
+
+// Prend la date maximale entre start et le 1er janvier
+  const effectiveDate = startDate < janFirst ? janFirst : startDate;
+
+  const week=getWeekNumber(effectiveDate)
+  console.log(week)
+  const month=new Date(effectiveDate).getMonth()
+  const year=new Date(effectiveDate).getFullYear()
   
   const color=contract.RBNB? "yellow":"orange"
   let classic=Number(document.getElementById("total-annee").getAttribute("Classic"))
   let RBNB=Number(document.getElementById("total-annee").getAttribute("RBNB"))
-
+  console.log(`total-${color}-${week}-${year}`)
   const totalWeek=document.getElementById(`total-${color}-${week}-${year}`)
-  
-  
+  console.log(totalWeek)
   const totalWeekNb=Number(totalWeek.innerText)
   totalWeek.innerText=totalWeekNb+Number(contract.loyer)
 
@@ -913,8 +935,21 @@ const updateTotal=(contract,action)=>{
 
 
 const deleteContract = async ()=>{
+
+      const id = selectingContract.id;
+
+      // Vérifie si l'id se termine par "bis"
+      const endsWithBis = id.endsWith("-bis");
+
+      // Supprime le suffixe "bis" si présent
+      const idSansBis = endsWithBis ? id.slice(0, -4) : id;
+
+      // Ajoute "bis" si absent
+      const idAvecBis = endsWithBis ? id : id + "-bis";
+
       updateTotal(selectingContract,-1)
-      await deleteData("contrats", selectingContract.id)
+      await deleteData("contrats", idSansBis)
+      await deleteData("contrats", idAvecBis)
       
       document.getElementById("delete-contract-btn").classList.toggle("hidden");
       document.getElementById("modify-contract-btn").classList.toggle("hidden");
@@ -988,8 +1023,22 @@ function creerZoneTexteEtendue(contract,texte) {
   
 
   // Récupération de l'élément cible
+const startDate = new Date(start);
 
-const e1 = document.getElementById(`${new Date(start).toLocaleDateString()}--app${contract.app}`);
+// Crée le 1er janvier de la même année
+const janFirst = new Date(YEAR, 0, 1);
+
+// Prend la date maximale entre start et le 1er janvier
+const effectiveDate = startDate < janFirst ? janFirst : startDate;
+
+
+
+
+
+
+
+const e1 = document.getElementById(`${effectiveDate.toLocaleDateString()}--app${contract.app}`);
+console.log(`${effectiveDate.toLocaleDateString()}--app${contract.app}`)
 // Positionner e1 en relatif pour pouvoir placer une zone absolue à l'intérieur
 if (getComputedStyle(e1).position === 'static') {
   e1.style.position = 'relative';
@@ -1226,8 +1275,8 @@ const calcTax=(contract)=>{
   const nbNuit=Number(new Date(contract.end).getDate()-new Date(contract.start).getDate())
   const nbApp=contract.app
   const nbAdult=Number(contract.NbAdulte)
+  if (!contract.RBNB){
   if (nbApp==1){
-    console.log(contract.loyer, contract.loyer / (nbAdult + Number(contract.NbEnfant)) / nbNuit)
     return parseFloat((Math.min(
     1.35,
     contract.loyer / (nbAdult + Number(contract.NbEnfant)) / nbNuit * 0.05
@@ -1235,6 +1284,7 @@ const calcTax=(contract)=>{
   }else {
     return 0.85*nbAdult*nbNuit
   }
+}
   
 }
 
