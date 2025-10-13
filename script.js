@@ -16,7 +16,7 @@ async function insertData(table, data) {
     console.error(`Erreur lors de l'insertion dans ${table} :`, error);
     return false;
   }
-  if (new Date(payload.start).getFullYear()!==new Date(payload.end).getFullYear()){
+  if (table==='contrats' && new Date(payload.start).getFullYear()!==new Date(payload.end).getFullYear()){
     data.year=new Date(data.end).getFullYear()
     data.id= `${data.name}-${new Date()}-bis`
     const payload = { ...data };
@@ -79,7 +79,6 @@ async function loadData(table, year) {
 
 // deleteData(table: string, id: string)
 async function deleteData(table, id) {
-  console.log(id)
   const { error } = await _supabase
     .from(table)
     .delete()
@@ -219,6 +218,7 @@ let app
 let manageContract=false;
 let newContract = false;
 const nbAppartements = 7;
+let newVac=false;
 
 
 const taskForm = document.getElementById("task-form");
@@ -246,6 +246,8 @@ taskForm.addEventListener("submit", (e) => {
 });
 let YEAR = 2025;
 let selectedHld=false;
+let selectedHldVac=false;
+let startVac;
 
  function generatePlanning(year) {
   YEAR = year;
@@ -256,7 +258,9 @@ let selectedHld=false;
     <h2>Planning ${year}</h2>
     <div class="add-contract-div">
       <button type="button" class="add-contract-button" id="btn">Ajouter contrat</button>
-      <button type="button" class="add-contract-button" id="btn-hld">Ajouter Vacances/Jour fériés</button>
+      <button type="button" class="add-contract-button" id="btn-hld">Ajouter Jour fériés</button>
+      <button type="button" class="add-contract-button" id="btn-hld-vac">Ajouter Vacances</button>
+
       <button type="button" class="add-contract-button" id="btn-excel">Télécharger Excel</button>
       <p id="result" class="add-contract-info"></p>
       <button id="delete-contract-btn" class="add-contract-button hidden">Supprimer</button>
@@ -266,6 +270,7 @@ let selectedHld=false;
 
   const button = document.getElementById("btn");
   const buttonHld = document.getElementById("btn-hld");
+  const buttonHldVac = document.getElementById("btn-hld-vac");
   const result = document.getElementById("result");
   const deleteContractBtn = document.getElementById("delete-contract-btn");
   const modifyContractBtn = document.getElementById("modify-contract-btn");
@@ -300,6 +305,13 @@ let selectedHld=false;
     reset()
     button.innerText = "Annuler";
     newContract = true;
+
+    buttonHld.innerText="Ajouter Jour fériés"
+    selectedHld=false
+    buttonHldVac.innerText="Ajouter Vacances"
+    selectedHldVac=false
+
+
     selectingContract.activate = true;
     app = selectingContract.app;
     result.innerText = "Cliquez d'abord sur la date de début, puis sur la date de fin dans le planning.";
@@ -307,13 +319,43 @@ let selectedHld=false;
 
   buttonHld.addEventListener("click", () => {
     if (selectedHld) {
-      buttonHld.innerText = "Mettre à jour Vacances/Jour férié";
+      buttonHld.innerText = "Mettre à jour Jour férié";
       result.innerText = "";
       selectedHld = false;
     } else {
       result.innerText = "Cliquez sur les jours fériés.";
       selectedHld = true;
       buttonHld.innerText = "Terminer";
+
+      selectedHldVac = false;
+      buttonHldVac.innerText = "Mettre à jour Vacances";
+      button.innerText = "Ajouter Contrat";
+      if (newContract){
+        result.innerText = "Nouveau contrat annulé";
+        newContract = false;
+      }
+      
+    }
+  });
+
+  buttonHldVac.addEventListener("click", () => {
+    if (selectedHldVac) {
+      buttonHld.innerTextVac = "Mettre à jour Vacances";
+      result.innerText = "";
+      selectedHldVac = false;
+    } else {
+      result.innerText = "Cliquez sur le début des vacances.";
+      selectedHldVac = true;
+      buttonHldVac.innerText = "Terminer";
+
+      selectedHld = false;
+      buttonHld.innerText = "Mettre à jour Jours Férié";
+      if (newContract){
+        result.innerText = "Nouveau contrat annulé";
+        newContract = false;
+      }
+      button.innerText = "Ajouter Contrat";
+      
     }
   });
 
@@ -473,20 +515,65 @@ let selectedHld=false;
           const th = document.createElement("th");
           th.textContent = dayObj.day;
           th.isDayOff = false;
-          th.id = `${dayObj.day}-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`;
+          th.id = `${dayObj.date.toLocaleDateString("en-US")}`;
           th.addEventListener("click",async () => {
                 if (selectedHld) {
                     const listDayOff=await loadData("jours_feries", YEAR)
                     if (listDayOff.some(obj => obj.id === th.id)) {
                       th.style.backgroundColor="white"
-                      deleteData("jours_feries", th.id)
-                      
+                      await deleteData("jours_feries", th.id)
                     } else {
                       th.style.backgroundColor="blue"
                       await insertData('jours_feries', {id:th.id,year:YEAR});
                     }
                    
                     }
+                  if (selectedHldVac) {
+                    if (th.style.backgroundColor==="green"){
+                        th.style.backgroundColor="white"
+                        await deleteData("holliday", th.id)
+
+                    }
+                    else
+                      {if (!newVac){
+                      newVac=true
+                      startVac=th.id
+                      if (th.style.backgroundColorth!=='blue'){
+                          th.style.backgroundColor="green"}
+                      result.innerText="Sélectionner la fin des Vacances"
+                      await insertData('holliday', {id:startVac,year:YEAR});
+
+                    }else{
+                      newVac=false
+                      const endVac=th.id 
+                      result.innerText="Sélectionner le début des Vacances"                     
+                      while (startVac!==endVac){
+                        console.log(startVac)
+                        const startDate = new Date(startVac);
+
+                        // Incrémenter d’un jour
+                        startDate.setDate(startDate.getDate() + 1);
+
+                        // Formater la nouvelle date
+                        startVac = startDate.toLocaleDateString("en-US");
+
+                        
+
+                        console.log(startVac)
+                        
+                        if (document.getElementById(startVac).style.backgroundColor!=='blue'){
+                          
+                          document.getElementById(startVac).style.backgroundColor="green"}
+                        
+                        await insertData('holliday', {id:startVac,year:YEAR});
+
+                      
+                      
+                    
+                      }
+                    }
+                  }
+                  }
           });
       numbersRow.appendChild(th);
       });
@@ -624,7 +711,6 @@ let selectedHld=false;
         const totalYellow=createColorColumn("yellow")
         totalYellow.innerText=0
         totalYellow.id=`total-yellow-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`
-        console.log(`total-yellow-${Math.abs(week) > 100 ? week - 100 : Math.abs(week)}-${year+Math.floor(m/12)}`)
         totalYellow.classList.add("total")
         const totalOrange=createColorColumn("orange")
         totalOrange.innerText=0
@@ -807,6 +893,7 @@ const updateDisplay = async () => {
     };
       const listContract = await loadData("contrats", YEAR)
       const listDayOff = await loadData("jours_feries", YEAR)
+      const listVac = await loadData("holliday", YEAR)
       resetAllTh();
       resetTotal();
       resetAllTd();
@@ -863,6 +950,12 @@ const updateDisplay = async () => {
       cell.style.backgroundColor = "blue";
     }
   });
+  listVac.forEach((dayId) => {
+    const cell = document.getElementById(dayId.id);
+    if (cell) {
+      cell.style.backgroundColor = "green";
+    }
+  });
     
 reset()
 
@@ -904,16 +997,13 @@ const janFirst = new Date(YEAR, 0, 1);
   const effectiveDate = startDate < janFirst ? janFirst : startDate;
 
   const week=getWeekNumber(effectiveDate)
-  console.log(week)
   const month=new Date(effectiveDate).getMonth()
   const year=new Date(effectiveDate).getFullYear()
   
   const color=contract.RBNB? "yellow":"orange"
   let classic=Number(document.getElementById("total-annee").getAttribute("Classic"))
   let RBNB=Number(document.getElementById("total-annee").getAttribute("RBNB"))
-  console.log(`total-${color}-${week}-${year}`)
   const totalWeek=document.getElementById(`total-${color}-${week}-${year}`)
-  console.log(totalWeek)
   const totalWeekNb=Number(totalWeek.innerText)
   totalWeek.innerText=totalWeekNb+Number(contract.loyer)
 
@@ -1038,7 +1128,6 @@ const effectiveDate = startDate < janFirst ? janFirst : startDate;
 
 
 const e1 = document.getElementById(`${effectiveDate.toLocaleDateString()}--app${contract.app}`);
-console.log(`${effectiveDate.toLocaleDateString()}--app${contract.app}`)
 // Positionner e1 en relatif pour pouvoir placer une zone absolue à l'intérieur
 if (getComputedStyle(e1).position === 'static') {
   e1.style.position = 'relative';
