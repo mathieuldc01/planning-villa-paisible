@@ -4,6 +4,35 @@ const supabaseUrl = 'https://ikbmdtbyhxdlzoqkfmew.supabase.co'
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrYm1kdGJ5aHhkbHpvcWtmbWV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5NzE4MDksImV4cCI6MjA3MjU0NzgwOX0.DHcPtjFe7C2bCrFS9ruplwW1aZfEkSOrYjnUIHMdSA4"
 const _supabase = createClient(supabaseUrl, supabaseKey)
 
+function isDateBeforeOrEqual(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+
+  // Extraire uniquement jour, mois, année
+  const y1 = d1.getFullYear(), m1 = d1.getMonth(), day1 = d1.getDate();
+  const y2 = d2.getFullYear(), m2 = d2.getMonth(), day2 = d2.getDate();
+
+  // Comparaison manuelle
+  if (y1 < y2) return true;
+  if (y1 > y2) return false;
+  if (m1 < m2) return true;
+  if (m1 > m2) return false;
+  return day1 <= day2;
+}
+
+function nombreDeJoursEntre(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+
+  // Réinitialiser l'heure à minuit pour éviter les décalages
+  d1.setHours(0, 0, 0, 0);
+  d2.setHours(0, 0, 0, 0);
+
+  const diffMs = d2 - d1; // différence en millisecondes
+  const diffJours = diffMs / (1000 * 60 * 60 * 24); // conversion en jours
+
+  return diffJours;
+}
 
 
 
@@ -141,16 +170,35 @@ const workbook = new ExcelJS.Workbook();
 const worksheet = workbook.addWorksheet('Feuille1');
 
 // Ajouter l'entête
-const headers = ['APP','NOMS', 'DATE', 'LOYER', "NOMBRE d'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'REMARQUES'];
+const headers = ['APP','NOMS', 'DATE', 'LOYER', "NOMBRE D'ADULTE", "NOMBRE D'ENFANT", 'TAXE DE SEJOUR', 'LOYER RBNB', 'REMARQUES'];
 const headerRow=worksheet.addRow(headers);
 style(headerRow)
-
+worksheet.addRow([])
 // Récupérer les contrats
 const ListContract = await loadData("contrats",YEAR)
-
+ListContract.sort((a,b)=>{if (a.app!==b.app){
+  return a.app-b.app
+}else{
+  nombreDeJoursEntre(a.start,b.start)
+}})
+let app=1
+let totapp=0
+let totapprbnb=0
+let totapptax=0
 // Ajouter les données
 ListContract.forEach(contract => {
-  const taxe = calcTax(contract);
+  if (app!=contract.app){
+    const total = [`TOTAL APPARTEMENT ${app}`,'', '', totapp,"", "", totapptax, totapprbnb, ''];
+    const headerRow=worksheet.addRow(total);
+    style(headerRow)
+    app=contract.app
+    totapp=0
+    totapprbnb=0
+    totapptax=0
+    worksheet.addRow([])
+  }
+  const taxe = parseFloat(calcTax(contract).toFixed(2));
+  console.log(contract.name,taxe)
   const headerRow=worksheet.addRow([
     contract.app,
     contract.name,
@@ -167,8 +215,10 @@ ListContract.forEach(contract => {
   style(headerRow)
   loyer+=contract.RBNB? 0:Number(contract.loyer)
   loyerRBNB+=contract.RBNB? Number(contract.loyer):0
-
   tax+=contract.RBNB? 0:taxe
+  totapp+=contract.RBNB? 0:Number(contract.loyer)
+  totapprbnb+=contract.RBNB? Number(contract.loyer):0
+  totapptax+=contract.RBNB? 0:taxe
 });
 
 // Ajuster la largeur des colonnes automatiquement
@@ -182,10 +232,13 @@ headers.forEach((_, colIndex) => {
   worksheet.getColumn(colIndex + 1).width = maxLength + 10; // +2 pour un peu d'espace
 });
 
-
+const subtotal = [`TOTAL APPARtEMENt ${app}`,'', '', totapp,"", "", totapptax, totapprbnb, ''];
+    const subheaderRow=worksheet.addRow(subtotal);
+    style(subheaderRow)
 
 const total = ['TOTAL','', '', loyer,"", "", tax, loyerRBNB, ''];
 const headerRowTotal=worksheet.addRow(total);
+worksheet.addRow([]);
 style(headerRowTotal)
 
   // Exporter le fichier
@@ -244,12 +297,12 @@ taskForm.addEventListener("submit", (e) => {
   addContract();
 
 });
-let YEAR = 2025;
+let YEAR = new Date().getFullYear();
 let selectedHld=false;
 let selectedHldVac=false;
 let startVac;
 
- function generatePlanning(year) {
+function generatePlanning(year) {
   YEAR = year;
   selectingContract.year=YEAR
   const planningContainer = document.getElementById("planning");
@@ -549,7 +602,7 @@ let startVac;
                       result.innerText="Sélectionner le début des Vacances"   
                                         
                       while (startVac!==endVac){
-                        console.log(startVac)
+                        
                         const startDate = new Date(startVac);
 
                         // Incrémenter d’un jour
@@ -560,7 +613,6 @@ let startVac;
 
                         
 
-                        console.log(startVac)
                         
                         if (document.getElementById(startVac).style.backgroundColor!=='blue'){
                           
@@ -654,13 +706,12 @@ let startVac;
             } else if (td.names.length > 0) {
               
               const saveContract=await loadData("contrats", YEAR)
-              
 
                     updateSelectingContract(saveContract.find(contract => contract.id === td.names[0] || contract.id === td.names[0]+'-bis' ));
                     deleteContractBtn.classList.remove("hidden");
                     modifyContractBtn.classList.remove("hidden");
 
-                    result.innerText = `Locataires : ${selectingContract.name} ${selectingContract.RBNB ? `(RBNB)` : ""}\n`;
+                    result.innerText = `Locataires : ${selectingContract.name} \n`;
                     result.innerText += `Nombre d'adulte :${selectingContract.NbAdulte} ${Number(selectingContract.NbEnfant) > 0 ? `| Nombre d'enfant ${selectingContract.NbEnfant}` : ''} \n`;
                     result.innerText += `Loyer : ${selectingContract.loyer} | Taxe de séjour ${selectingContract.taxeDeSejour}\n`;
                     result.innerText += `Date : du ${selectingContract.start} au ${selectingContract.end}\n`;
@@ -848,7 +899,7 @@ const addContract= async ()=>{
 
 
 const updateSelectingContract = (contract)=>{
-  selectingContract.activate=true;
+  selectingContract.activate=false;
   selectingContract.name = contract.name;
   selectingContract.id=contract.id
   selectingContract.start = contract.start;
@@ -900,14 +951,14 @@ const updateDisplay = async () => {
       resetAllTd();
 
     listContract.forEach((contract) => {
-      const color = contract.RBNB ? "yellow" : "yellow"; // même couleur ?
+      const color = contract.RBNB ? "yellow" : "yellow";
       const app = contract.app;
       const name = contract.id;
 
       let day = new Date(contract.start);
       const end = new Date(contract.end);
-
-      while (day <= end) {
+      
+      while (isDateBeforeOrEqual(day,end)) {
         const dayStr = day.toLocaleDateString('fr-FR');
         const id = `${dayStr}--app${app}`;
         const cell = document.getElementById(id);
@@ -934,11 +985,12 @@ const updateDisplay = async () => {
 
         day.setDate(day.getDate() + 1);
       }
+      
     })
 
   listContract.forEach((contract)=>{
       // Affichage associé au contrat
-      const texte = `${contract.name} ${contract.RBNB ? '(RBNB)' : ''} : ${contract.description}`;
+      const texte = contract.description? `${contract.name} : ${contract.description}` : `${contract.name}`;
       creerZoneTexteEtendue(contract, texte);
       plotIncome(contract);
       updateTotal(contract,1);
@@ -991,39 +1043,42 @@ const updateTotal=(contract,action)=>{
   
   // Crée le 1er janvier de la même année
 const startDate = new Date(contract.start)
-
 const janFirst = new Date(YEAR, 0, 1);
 
-// Prend la date maximale entre start et le 1er janvier
-  const effectiveDate = startDate < janFirst ? janFirst : startDate;
 
-  const week=getWeekNumber(effectiveDate)
-  const month=new Date(effectiveDate).getMonth()
-  const year=new Date(effectiveDate).getFullYear()
+
+// Prend la date maximale entre start et le 1er janvier
+  if (startDate >= janFirst){
+  const week=getWeekNumber(startDate)
+  const month=new Date(startDate).getMonth()
+  const year=new Date(startDate).getFullYear()
   
   const color=contract.RBNB? "yellow":"orange"
   let classic=Number(document.getElementById("total-annee").getAttribute("Classic"))
   let RBNB=Number(document.getElementById("total-annee").getAttribute("RBNB"))
   const totalWeek=document.getElementById(`total-${color}-${week}-${year}`)
-  const totalWeekNb=Number(totalWeek.innerText)
-  totalWeek.innerText=totalWeekNb+Number(contract.loyer)
+
+  const totalWeekNb=parseFloat(Number(totalWeek.innerText).toFixed(2))
+
+  totalWeek.innerText=parseFloat((totalWeekNb+Number(contract.loyer)).toFixed(2))
 
   const monthId =contract.RBNB? `totalRBNB-${month}-${year}`:`totalClassic-${month}-${year}`
 
   const totalMonth=document.getElementById(monthId)
   
   const totalMonthNb=Number(totalMonth.value)
-  totalMonth.value=totalMonthNb+action*Number(contract.loyer)
+  totalMonth.value=parseFloat((totalMonthNb+action*Number(contract.loyer)).toFixed(2))
+
   totalMonth.innerText=contract.RBNB? `RBNB : ${totalMonth.value}`:`Normal : ${totalMonth.value}`
   
 
-  if (contract.RBNB){RBNB+=action*Number(contract.loyer)}
-  else {classic+=action*Number(contract.loyer)}
+  if (contract.RBNB){RBNB=parseFloat((RBNB+action*Number(contract.loyer)).toFixed(2))}
+  else {classic= parseFloat((classic+action*Number(contract.loyer)).toFixed(2))}
   document.getElementById("total-annee").innerText=`Montant Total : ${classic+RBNB} (Classique : ${classic} |RBNB : ${RBNB})`
   document.getElementById("total-annee").setAttribute("Classic",classic)
   document.getElementById("total-annee").setAttribute("RBNB",RBNB)
 }
-
+}
 
 const deleteContract = async ()=>{
 
@@ -1161,10 +1216,10 @@ Object.assign(zone.style, {
   whiteSpace: 'normal',
   pointerEvents: 'none',
   userSelect: 'none',
-  fontSize: '0.7rem',
-  zIndex: '0',
+  fontSize: '1rem',
+  
   justifyContent: 'center',
-  zIndex : "1000",
+  zIndex : "2",
   
 
 });
@@ -1177,6 +1232,18 @@ Object.assign(zone.style, {
 }
   
 const getBestTextArea=(contract)=>{
+const janFirst = new Date(YEAR, 0, 1); 
+const decThirtyFirst = new Date(YEAR+1, 0, 31); 
+
+
+  const contractStart = isDateBeforeOrEqual(new Date(contract.start),janFirst)? formatDateToInput(janFirst):contract.start
+  const contractEnd = isDateBeforeOrEqual(new Date(contract.end),decThirtyFirst)? contract.end:formatDateToInput(decThirtyFirst)
+  let delta=getWeekNumber(new Date(contractEnd))-getWeekNumber(new Date(contractStart))
+  console.log(delta,contract.name)
+  if (delta<0 || delta>40){
+    delta=Math.ceil(nombreDeJoursEntre(new Date(contractStart), new Date(contractEnd))/7)+1-(new Date(contractEnd).getDay()>new Date(contractStart).getDay()?0:1)
+  }
+  console.log(delta,contract.name)
   let length
   let start
   let startOffset
@@ -1185,44 +1252,45 @@ const getBestTextArea=(contract)=>{
   let l2
   let l3
   let l4 
-  if (getWeekNumber(new Date(contract.start))===getWeekNumber(new Date(contract.end)))
+  if (delta===0)
   {
-    if (new Date(contract.start).getMonth()===new Date(contract.end).getMonth()){
-     length=(new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay())-new Date(contract.start).getDay()+1
-     start=contract.start
+    if (new Date(contractStart).getMonth()===new Date(contractEnd).getMonth()){
+     length=(new Date(contractEnd).getDay()===0?7:new Date(contractEnd).getDay())-new Date(contractStart).getDay()+1
+     start=contractStart
      startOffset=true;
      endOffset=true;
      
-    }else if (joursRestantsDansMois(new Date(contract.start))>new Date(contract.end).getDate()){
-           length=joursRestantsDansMois(new Date(contract.start))+1
-           start=contract.start
+    }else if (joursRestantsDansMois(new Date(contractStart))>new Date(contractEnd).getDate()){
+           length=joursRestantsDansMois(new Date(contractStart))+1
+           start=contractStart
            startOffset=true;
            endOffset=false;
            
     }else {
-         length=new Date(contract.end).getDate()
-         const year=new Date(contract.end).getFullYear()
-         const month=new Date(contract.end).getMonth()
+         length=new Date(contractEnd).getDate()
+         const year=new Date(contractEnd).getFullYear()
+         const month=new Date(contractEnd).getMonth()
          start=new Date(year, month,1)
          startOffset=false;
          endOffset=true;
         
     }
-  }else if (getWeekNumber(new Date(contract.start))+1===getWeekNumber(new Date(contract.end))){
-      if ( (new Date(contract.start).getMonth()===new Date(contract.end).getMonth())){
+  }else if (delta===1){
+      
+      if ( (new Date(contractStart).getMonth()===new Date(contractEnd).getMonth())){
         //  même mois | cons week
-        if ((new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay())>8-(new Date(contract.start).getDay()===0?7:new Date(contract.start).getDay()))
+        if ((new Date(contractEnd).getDay()===0?7:new Date(contractEnd).getDay())>8-(new Date(contractStart).getDay()===0?7:new Date(contractStart).getDay()))
         {
-           length=new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay()
-           const year=new Date(contract.end).getFullYear()
-          const month=new Date(contract.end).getMonth()
-           start=new Date(year, month,new Date(contract.end).getDate()-(new Date(contract.end).getDay()+6)%7)
+           length=new Date(contractEnd).getDay()===0?7:new Date(contractEnd).getDay()
+           const year=new Date(contractEnd).getFullYear()
+          const month=new Date(contractEnd).getMonth()
+           start=new Date(year, month,new Date(contractEnd).getDate()-(new Date(contractEnd).getDay()+6)%7)
            startOffset=false;
            endOffset=true;
            
         }else {
-           length=(8-new Date(contract.start).getDay())%8
-           start=new Date(contract.start)
+           length=(8-new Date(contractStart).getDay())%8
+           start=new Date(contractStart)
            startOffset=true;
            endOffset=false;
           
@@ -1231,11 +1299,11 @@ const getBestTextArea=(contract)=>{
       // mois cons |  semaine cons
       else{
         //semaine 1 coupé
-        const month=new Date(contract.start).getMonth()
-        const year=new Date(contract.start).getFullYear()
-        const startday=new Date(contract.start).getDay()===0?7:new Date(contract.start).getDay()
-        const startWeek=getWeekNumber(new Date(contract.start))
-        const endday=new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay()
+        const month=new Date(contractStart).getMonth()
+        const year=new Date(contractStart).getFullYear()
+        const startday=new Date(contractStart).getDay()===0?7:new Date(contractStart).getDay()
+        const startWeek=getWeekNumber(new Date(contractStart))
+        const endday=new Date(contractEnd).getDay()===0?7:new Date(contractEnd).getDay()
         const endMonthDay=new Date(year,month+1,0).getDay()==0?7:new Date(year,month+1,0).getDay()
         const cutWeek=getWeekNumber(new Date(endMonthDay))
         
@@ -1251,7 +1319,7 @@ const getBestTextArea=(contract)=>{
         }
         if (l1>l2+1 && l1>l3){
              length=l1
-             start=new Date(contract.start)
+             start=new Date(contractStart)
              startOffset=true;
              endOffset=false;
              
@@ -1273,15 +1341,17 @@ const getBestTextArea=(contract)=>{
        
         
       
-  }else if (getWeekNumber(new Date(contract.start))+2===getWeekNumber(new Date(contract.end))){
-        const month=new Date(contract.start).getMonth()
-        const year=new Date(contract.start).getFullYear()
-        const startday=new Date(contract.start).getDay()===0?7:new Date(contract.start).getDay()
-        const startWeek=getWeekNumber(new Date(contract.start))
-        const endday=new Date(contract.end).getDay()===0?7:new Date(contract.end).getDay()
+  }else if (delta===2){
+        const month=new Date(contractStart).getMonth()
+        const year=new Date(contractStart).getFullYear()
+        const startday=new Date(contractStart).getDay()===0?7:new Date(contractStart).getDay()
+        const startWeek=getWeekNumber(new Date(contractStart))
+        const endday=new Date(contractEnd).getDay()===0?7:new Date(contractEnd).getDay()
         const endMonthDay=new Date(year,month+1,0).getDay()==0?7:new Date(year,month+1,0).getDay()
-        const cutWeek=getWeekNumber(new Date(endMonthDay))
-        if (startWeek!==cutWeek && startWeek+2!==cutWeek){
+        const cutWeek=getWeekNumber(new Date(year,month+1,0))
+
+        if (startWeek!==cutWeek && startWeek+2!==cutWeek && endday>endMonthDay && startWeek && cutWeek!==1){
+          console.log(contract.name)
           l1= 8-startday
           l2= endMonthDay
           l3= 8-endMonthDay
@@ -1289,13 +1359,13 @@ const getBestTextArea=(contract)=>{
           
           if (l1>l2+1 && l1>l3+1 && l1>l4){
              length=l1
-             start=new Date(contract.start)
+             start=new Date(contractStart)
              startOffset=true;
              endOffset=false;
              
           }else if ( l4>=l2+1 && l4>=l3+1){
              length=l4
-            const day=new Date(contract.end).getDate()
+            const day=new Date(contractEnd).getDate()
              start=new Date(year,month+1,day-endday+1)
              startOffset=false;
              endOffset=true;
@@ -1303,24 +1373,24 @@ const getBestTextArea=(contract)=>{
           }
           else if (l2>l3){
              length=l2
-            const day=new Date(contract.end).getDate()
+            const day=new Date(contractEnd).getDate()
              start=new Date(year,month+1,day-endday+1)
              startOffset=false;
              endOffset=false;
              
           }else{
             length=l3-1
-            const day=new Date(contract.end).getDate()
+            const day=new Date(contractEnd).getDate()
             start=new Date(year,month+1,1)
             startOffset=false;
             endOffset=false;
             
           }
         }else{
-            const month=new Date(contract.start).getMonth()
-            const year=new Date(contract.start).getFullYear()
-            const date=new Date(contract.start).getDate()
-            const day=new Date(contract.start).getDay()===0? 7:new Date(contract.start).getDay()
+            const month=new Date(contractStart).getMonth()
+            const year=new Date(contractStart).getFullYear()
+            const date=new Date(contractStart).getDate()
+            const day=new Date(contractStart).getDay()===0? 7:new Date(contractStart).getDay()
              length=7
              start=new Date(year,month,date+8-day)
              startOffset=false;
@@ -1329,15 +1399,23 @@ const getBestTextArea=(contract)=>{
         }
   }
   else{ 
-            const month=new Date(contract.start).getMonth()
-            const year=new Date(contract.start).getFullYear()
-            const date=new Date(contract.start).getDate()
-            const day=new Date(contract.start).getDay()===0? 7:new Date(contract.start).getDay()
+    
+            const month=new Date(contractStart).getMonth()
+            const year=new Date(contractStart).getFullYear()
+            const date=new Date(contractStart).getDate()
+            const day=new Date(contractStart).getDay()===0? 7:new Date(contractStart).getDay()
+            const endMonthDay=new Date(year,month+1,0).getDay()==0?7:new Date(year,month+1,0).getDay()
+            const cutWeek=getWeekNumber(new Date(year,month+1,0))
+            const startWeek=getWeekNumber(new Date(contractStart))
              length=7
+             if (cutWeek-1==startWeek || cutWeek===1){
+              start=new Date(year,month,date+14-day+1)
+             }
+             else{
              start=new Date(year,month,date+7-day+1)
+             }
              startOffset=false;
              endOffset=false;
-             
 
   }
   return [length,start,startOffset,endOffset]
@@ -1362,9 +1440,10 @@ function joursRestantsDansMois(date) {
 
 
 const calcTax=(contract)=>{
-  const nbNuit=Number(new Date(contract.end).getDate()-new Date(contract.start).getDate())
+  const nbNuit=Math.round(nombreDeJoursEntre(contract.start,contract.end))
   const nbApp=contract.app
   const nbAdult=Number(contract.NbAdulte)
+  console.log(contract.name,nbNuit)
   if (!contract.RBNB){
   if (nbApp==1){
     return parseFloat((Math.min(
@@ -1375,7 +1454,7 @@ const calcTax=(contract)=>{
     return 0.85*nbAdult*nbNuit
   }
 }
-  
+  return 0
 }
 
 
@@ -1383,6 +1462,7 @@ const debutPlanning = 2022;
 const finPlanning = new Date().getFullYear() + 1; // année actuelle + 1
 const ulPlanning = document.getElementById('year-list');
 
+generatePlanning(YEAR)
 for (let annee = debutPlanning; annee <= finPlanning; annee++) {
   const li = document.createElement('li');
   const a = document.createElement('a');

@@ -36,6 +36,7 @@
 
     }
     document.documentElement.style.display = "";
+
     
   }
 
@@ -78,20 +79,14 @@
           <input required type="number" class="form-control" id="app-input" value="" />
 
           <label class="task-form-label" for="adult-input">Nombre d'adulte</label>
-          <input required type="number" class="form-control" id="adult-input" value="" />
+          <input required type="number" class="form-control" id="adult-input" value="0" min="0" />
 
           <label class="task-form-label" for="child-input">Nombre d'enfant</label>
-          <input required type="number" class="form-control" id="child-input" value="" />
+          <input required type="number" class="form-control" id="child-input" value="0" min="0" />
 
           <label class="task-form-label" for="loyer-input">Loyer</label>
-          <input required type="number" step="0.01" class="form-control" id="loyer-input" value="" />
-          <div class="hidden">
-          <label for="taxe" class="task-form-label">Taxe de séjour (optionnel) :</label>
-          <select id="taxe">
-            <option value="option1">Option 1</option>
-            <option value="option2">Option 2</option>
-            <option value="option3">Option 3</option>
-          </select></div>
+          <input required type="number" step="0.01" class="form-control" id="loyer-input" value="" min="0.00" />
+         
 
           <label class="task-form-label">RBNB ? </label>
             <label><input type="radio" name="choix" value="oui" class="form-control" id="oui" required> Oui</label>
@@ -110,6 +105,7 @@
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
   <script type="module" src="script.js"></script>
+  <script>generatePlanning(2025)</script> 
 
 
 
