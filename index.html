@@ -6,7 +6,7 @@
   <title>Planning Villa Paisible</title>
   <link rel="stylesheet" href="style.css" />
 <script>
-  
+  // SHA-256 hash du mot de passe "villa2024"
   const PASSWORD_HASH = "f1c209e951d4bd466f9da8be1779301861ab8ed17c4e0380b5155a6e77440206";
 
   // Masque tout le document au chargement
@@ -23,21 +23,26 @@
   }
 
   async function checkAccess() {
-    let input = prompt("Mot de passe requis :");
+    const input = prompt("Mot de passe requis :");
 
     
 
-    let hash = await hashPassword(input);
+    const hash = await hashPassword(input);
     console.log(hash,PASSWORD_HASH)
     while (hash !== PASSWORD_HASH) {
-      input = prompt(`Mauvais mot de passe :` );
-      hash = await hashPassword(input);
+      const input = prompt(`Mauvais mot de passe :` );
+      const hash = await hashPassword(input);
           console.log(hash,PASSWORD_HASH)
 
     }
     document.documentElement.style.display = "";
-
     
+  }
+  async function unlock(password) {
+    const hash = await hashPassword(password);
+    if (hash === PASSWORD_HASH) {
+      document.documentElement.style.display = "";
+    }
   }
 
   // Vérifie dès le chargement
@@ -79,14 +84,21 @@
           <input required type="number" class="form-control" id="app-input" value="" />
 
           <label class="task-form-label" for="adult-input">Nombre d'adulte</label>
-          <input required type="number" class="form-control" id="adult-input" value="0" min="0" />
+          <input required type="number" class="form-control" id="adult-input" value="" />
 
           <label class="task-form-label" for="child-input">Nombre d'enfant</label>
-          <input required type="number" class="form-control" id="child-input" value="0" min="0" />
+          <input required type="number" class="form-control" id="child-input" value="" />
 
           <label class="task-form-label" for="loyer-input">Loyer</label>
-          <input required type="number" step="0.01" class="form-control" id="loyer-input" value="" min="0.00" />
-         
+          <input required type="number" class="form-control" id="loyer-input" value="" />
+
+          <div class="hidden">
+          <label for="taxe" class="task-form-label">Taxe de séjour (optionnel) :</label>
+          <select id="taxe">
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <option value="option3">Option 3</option>
+          </select></div>
 
           <label class="task-form-label">RBNB ? </label>
             <label><input type="radio" name="choix" value="oui" class="form-control" id="oui" required> Oui</label>
@@ -105,7 +117,6 @@
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
   <script type="module" src="script.js"></script>
-  <script>generatePlanning(2025)</script> 
 
 
 
