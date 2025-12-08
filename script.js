@@ -1,8 +1,13 @@
-import { createClient } from  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
-
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.86.2'
 const supabaseUrl = 'https://ikbmdtbyhxdlzoqkfmew.supabase.co'
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrYm1kdGJ5aHhkbHpvcWtmbWV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5NzE4MDksImV4cCI6MjA3MjU0NzgwOX0.DHcPtjFe7C2bCrFS9ruplwW1aZfEkSOrYjnUIHMdSA4"
 const _supabase = createClient(supabaseUrl, supabaseKey)
+
+
+
+
+
+
 
 function isDateBeforeOrEqual(date1, date2) {
   const d1 = new Date(date1);
@@ -1500,5 +1505,3 @@ const style=(row)=>{
   };
 });
 }
-
-

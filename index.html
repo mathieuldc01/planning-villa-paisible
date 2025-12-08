@@ -5,14 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planning Villa Paisible</title>
   <link rel="stylesheet" href="style.css" />
+
+</head>
+
+
+<body>
+
+
+  <div id="lock-screen">
+    <h2>Accès protégé</h2>
+    <label for="password-input">Mot de passe :</label>
+    <input type="password" id="password-input" />
+    <button onclick="checkAccess()">Valider</button>
+  </div>
+
+
 <script>
-  // SHA-256 hash du mot de passe "villa2024"
   const PASSWORD_HASH = "f1c209e951d4bd466f9da8be1779301861ab8ed17c4e0380b5155a6e77440206";
 
-  // Masque tout le document au chargement
-  document.documentElement.style.display = "none";
-
-  // Convertir string en ArrayBuffer
   async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -23,47 +33,44 @@
   }
 
   async function checkAccess() {
-    const input = prompt("Mot de passe requis :");
-
-    
-
+    const input = document.getElementById("password-input").value;
     const hash = await hashPassword(input);
-    console.log(hash,PASSWORD_HASH)
-    while (hash !== PASSWORD_HASH) {
-      const input = prompt(`Mauvais mot de passe :` );
-      const hash = await hashPassword(input);
-          console.log(hash,PASSWORD_HASH)
+    if (hash === PASSWORD_HASH) {
+      document.getElementById("lock-screen").classList.add("hidden");
+      document.getElementById("planning").style.visibility="visible";
+      document.getElementById("titre").style.visibility="visible";
+      document.getElementById("year-list").style.visibility="visible";
 
+    } else {
+      alert("Mauvais mot de passe");
     }
-    document.documentElement.style.display = "";
-    
   }
+
   async function unlock(password) {
     const hash = await hashPassword(password);
     if (hash === PASSWORD_HASH) {
-      document.documentElement.style.display = "";
+      document.getElementById("lock-screen").classList.add("hidden");
+      document.getElementById("planning").style.visibility="visible";
+      document.getElementById("titre").style.visibility="visible";
+      document.getElementById("year-list").style.visibility="visible";
     }
   }
-
-  // Vérifie dès le chargement
-  checkAccess();
 </script>
 
-</head>
 
 
-<body>
+
 
   <header> 
-    <nav>
+    <nav  style="visibility:hidden;">
       <ul id="year-list">       
       </ul>
     </nav>
   </header>
 
-  <h1>Planning Interactif</h1>
-  <div id="planning"></div>
-  
+  <h1 id="titre"  style="visibility:hidden;">Planning Interactif</h1>
+  <div id="planning" style="visibility:hidden;"></div>
+
         <form class="task-form hidden" id="task-form">
         <div class="task-form-header">
           <button id="close-task-form-btn" class="close-task-form-btn" type="button" aria-label="close">
