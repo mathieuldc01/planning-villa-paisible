@@ -1456,7 +1456,7 @@ const calcTax=(contract)=>{
     contract.loyer / (nbAdult + Number(contract.NbEnfant)) / nbNuit * 0.05
     )*nbAdult * nbNuit).toFixed(2))
   }else {
-    return 0.85*nbAdult*nbNuit
+    return 0.94*nbAdult*nbNuit
   }
 }
   return 0
